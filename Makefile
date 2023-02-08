@@ -14,15 +14,22 @@ LIBS=-L$(HOME)/libs -Wl,-rpath,$(HOME)/libs -lrt -lpthread -ltbb -lrocksdb
 CXXFLAG=-fPIC -w -march=native -std=c++11 $(OPT)
 
 DB_SRCS=$(HOME)/src/db_impl.cc $(HOME)/src/db_iter.cc $(HOME)/src/hash.cc $(HOME)/src/cache/sharded_cache.cc  $(HOME)/src/cache/lru_cache.cc $(HOME)/src/cache/wlfu_cache.cc $(HOME)/src/cache/fifo_cache.cc $(HOME)/src/threadpool.c
-SRCS=$(DB_SRCS) 
+SRCS=$(DB_SRCS)
 
-all: create_libs wisckey
+ND_SRCS =$(HOME)/newdb/db_impl.cc $(HOME)/newdb/db_iter.cc  $(HOME)/newdb/threadpool.c
+NEWDB_SRCS=$(ND_SRCS)
+NEWDB_TARGET=libnewdb.so
+
+all: create_libs wisckey newdb
 
 create_libs:
 	$(MKDIR) -p $(HOME)/libs
 
 wisckey:
 	$(CC) -shared -o $(HOME)/libs/$(TARGET) $(CXXFLAG) $(SRCS) $(INCLUDES) $(LIBS)
+
+newdb:
+	$(CC) -shared -o $(HOME)/libs/$(NEWDB_TARGET) $(CXXFLAG) $(NEWDB_SRCS) $(INCLUDES) $(LIBS)
 
 install:
 	cp $(HOME)/libs/$(TARGET) $(INSTALL_PATH) 
