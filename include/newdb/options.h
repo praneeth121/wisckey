@@ -1,17 +1,16 @@
 /******* newdb *******/
 /* options.h
-* 07/23/2019
-* by Mian Qin
-*/
+ * 07/23/2019
+ * by Mian Qin
+ */
 
 #ifndef _options_h_
 #define _options_h_
 
-
+#include <memory>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <memory>
 #include <string>
 
 #include "newdb/slice.h"
@@ -22,11 +21,7 @@ namespace newdb {
 class Comparator;
 class Slice;
 
-enum FilterType {
-  NoFilter,
-  Bloom,
-  Surf
-};
+enum FilterType { NoFilter, Bloom, Surf };
 
 // Options to control the behavior of a database (passed to DB::Open)
 struct Options {
@@ -42,7 +37,7 @@ struct Options {
   // Index cache size in MB (currently only support LSM)
   // Default: 128MB
   int indexCacheSize;
-  
+
   // Whether enable value prefetch for iterators
   // Default: false
   bool prefetchEnabled;
@@ -98,39 +93,29 @@ struct Options {
   // Statistic dump interval in seconds
   // Default: -1 (no dump)
   int stats_dump_interval;
-  
+
   // Read only option (readonly can bypass cache)
   // Default: false
   bool readonly;
 
-  Options() : maxOpenFiles(1000),
-              indexBlockSize(4096),
-              indexCacheSize(128),
-              prefetchEnabled(false),
-              prefetchDepth(64),
-              prefetchReqThres(128),
-              rangefilterEnabled(false),
-              threadPoolThreadsNum(16),
-              threadPoolQueueDepth(128),
-              filterType(NoFilter),
-              filterBitsPerKey(8),
-              dataCacheSize(16),
-              logBufSize(16<<20),
-              walBufSize(1<<20),
-              GCWorkerThreads(16),
-              statistics(nullptr),
-              stats_dump_interval(-1),
-              readonly(false) { 
-  // Load from environment variable
+  Options()
+      : maxOpenFiles(1000), indexBlockSize(4096), indexCacheSize(128),
+        prefetchEnabled(false), prefetchDepth(64), prefetchReqThres(128),
+        rangefilterEnabled(false), threadPoolThreadsNum(16),
+        threadPoolQueueDepth(128), filterType(NoFilter), filterBitsPerKey(8),
+        dataCacheSize(16), logBufSize(16 << 20), walBufSize(1 << 20),
+        GCWorkerThreads(16), statistics(nullptr), stats_dump_interval(-1),
+        readonly(false) {
+    // Load from environment variable
     char *env_p;
-    if(env_p = std::getenv("PREFETCH_ENA")) {
+    if (env_p = std::getenv("PREFETCH_ENA")) {
       if (strcmp(env_p, "TRUE") == 0 || strcmp(env_p, "true") == 0)
         prefetchEnabled = true;
       else
         prefetchEnabled = false;
     }
 
-    if(env_p = std::getenv("PREFETCH_DEPTH")) {
+    if (env_p = std::getenv("PREFETCH_DEPTH")) {
       prefetchDepth = atoi(env_p);
     }
   }
@@ -145,7 +130,7 @@ struct Options {
 struct ReadOptions {
   // Define the upper key (Non-Inclusive) for range query
   // Default: NULL
-  Slice* upper_key;
+  Slice *upper_key;
 
   // Potential user hint for the length of a scan (how many next after seek?)
   // Default: 1 (adptively increase)
@@ -155,10 +140,7 @@ struct ReadOptions {
   // // Default: 4MB
   // int base_iter_buffer_size;
 
-  ReadOptions()
-      : upper_key(NULL),
-        scan_length(1) {
-  }
+  ReadOptions() : upper_key(NULL), scan_length(1) {}
 };
 
 // Options that control write operations
@@ -173,13 +155,9 @@ struct WriteOptions {
   // Default: 8
   size_t batchIDXSize;
 
-  WriteOptions()
-      : sync(false),
-        batchIDXWrite(false),
-        batchIDXSize(8) {
-  }
+  WriteOptions() : sync(false), batchIDXWrite(false), batchIDXSize(8) {}
 };
 
-}  // namespace newdb
+} // namespace newdb
 
 #endif

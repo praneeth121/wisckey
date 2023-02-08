@@ -1,44 +1,44 @@
 /******* newdb *******/
 /* status.h
-* 07/23/2019
-* by Mian Qin
-*/
+ * 07/23/2019
+ * by Mian Qin
+ */
 
 #ifndef _status_h_
 #define _status_h_
 
-#include <string>
 #include "newdb/slice.h"
+#include <string>
 
 namespace newdb {
 
 class Status {
- public:
+public:
   // Create a success status.
-  Status() : state_(NULL) { }
+  Status() : state_(NULL) {}
   ~Status() { delete[] state_; }
 
   // Copy the specified status.
-  Status(const Status& s);
-  void operator=(const Status& s);
+  Status(const Status &s);
+  void operator=(const Status &s);
 
   // Return a success status.
   static Status OK() { return Status(); }
 
   // Return error status of an appropriate type.
-  static Status NotFound(const Slice& msg, const Slice& msg2 = Slice()) {
+  static Status NotFound(const Slice &msg, const Slice &msg2 = Slice()) {
     return Status(kNotFound, msg, msg2);
   }
-  static Status Corruption(const Slice& msg, const Slice& msg2 = Slice()) {
+  static Status Corruption(const Slice &msg, const Slice &msg2 = Slice()) {
     return Status(kCorruption, msg, msg2);
   }
-  static Status NotSupported(const Slice& msg, const Slice& msg2 = Slice()) {
+  static Status NotSupported(const Slice &msg, const Slice &msg2 = Slice()) {
     return Status(kNotSupported, msg, msg2);
   }
-  static Status InvalidArgument(const Slice& msg, const Slice& msg2 = Slice()) {
+  static Status InvalidArgument(const Slice &msg, const Slice &msg2 = Slice()) {
     return Status(kInvalidArgument, msg, msg2);
   }
-  static Status IOError(const Slice& msg, const Slice& msg2 = Slice()) {
+  static Status IOError(const Slice &msg, const Slice &msg2 = Slice()) {
     return Status(kIOError, msg, msg2);
   }
 
@@ -64,13 +64,13 @@ class Status {
   // Returns the string "OK" for success.
   std::string ToString() const { return "OK"; };
 
- private:
+private:
   // OK status has a NULL state_.  Otherwise, state_ is a new[] array
   // of the following form:
   //    state_[0..3] == length of message
   //    state_[4]    == code
   //    state_[5..]  == message
-  const char* state_;
+  const char *state_;
 
   enum Code {
     kOk = 0,
@@ -85,12 +85,12 @@ class Status {
     return (state_ == NULL) ? kOk : static_cast<Code>(state_[4]);
   }
 
-  Status(Code code, const Slice& msg, const Slice& msg2) {
+  Status(Code code, const Slice &msg, const Slice &msg2) {
     assert(code != kOk);
     const uint32_t len1 = msg.size();
     const uint32_t len2 = msg2.size();
     const uint32_t size = len1 + (len2 ? (2 + len2) : 0);
-    char* result = new char[size + 5];
+    char *result = new char[size + 5];
     memcpy(result, &size, sizeof(size));
     result[4] = static_cast<char>(code);
     memcpy(result + 5, msg.data(), len1);
@@ -101,19 +101,19 @@ class Status {
     }
     state_ = result;
   };
-  static const char* CopyState(const char* state) {
+  static const char *CopyState(const char *state) {
     uint32_t size;
     memcpy(&size, state, sizeof(size));
-    char* result = new char[size + 5];
+    char *result = new char[size + 5];
     memcpy(result, state, size + 5);
     return result;
   };
 };
 
-inline Status::Status(const Status& s) {
+inline Status::Status(const Status &s) {
   state_ = (s.state_ == NULL) ? NULL : CopyState(s.state_);
 }
-inline void Status::operator=(const Status& s) {
+inline void Status::operator=(const Status &s) {
   // The following condition catches both aliasing (when this == &s),
   // and the common case where both s and *this are ok.
   if (state_ != s.state_) {
@@ -122,6 +122,6 @@ inline void Status::operator=(const Status& s) {
   }
 }
 
-}  // namespace newdb
+} // namespace newdb
 
 #endif

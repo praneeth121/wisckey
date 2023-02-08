@@ -1,12 +1,11 @@
 /******* newdb *******/
 /* iterator.h
-* 07/23/2019
-* by Mian Qin
-*/
+ * 07/23/2019
+ * by Mian Qin
+ */
 
 #ifndef _iterator_h_
 #define _iterator_h_
-
 
 #include "newdb/slice.h"
 #include "newdb/status.h"
@@ -14,9 +13,9 @@
 namespace newdb {
 
 class Iterator {
- public:
-  Iterator() {};
-  virtual ~Iterator() {};
+public:
+  Iterator(){};
+  virtual ~Iterator(){};
 
   // An iterator is either positioned at a key/value pair, or
   // not valid.  This method returns true iff the iterator is valid.
@@ -33,7 +32,7 @@ class Iterator {
   // Position at the first key in the source that is at or past target.
   // The iterator is Valid() after this call iff the source contains
   // an entry that comes at or past target.
-  virtual void Seek(const Slice& target) = 0;
+  virtual void Seek(const Slice &target) = 0;
 
   // Moves to the next entry in the source.  After this call, Valid() is
   // true iff the iterator was not positioned at the last entry in the source.
@@ -57,12 +56,12 @@ class Iterator {
   // REQUIRES: Valid()
   virtual Slice value() = 0;
 
- private:
+private:
   // No copying allowed
-  Iterator(const Iterator&);
-  void operator=(const Iterator&);
+  Iterator(const Iterator &);
+  void operator=(const Iterator &);
 };
 
-}  // namespace newdb
+} // namespace newdb
 
 #endif

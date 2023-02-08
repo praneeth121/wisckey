@@ -1,18 +1,18 @@
 /******* newdb *******/
 /* db.h
-* 07/23/2019
-* by Mian Qin
-*/
+ * 07/23/2019
+ * by Mian Qin
+ */
 
 #ifndef _db_h_
 #define _db_h_
 
-#include <stdint.h>
-#include <stdio.h>
 #include "newdb/iterator.h"
 #include "newdb/options.h"
 #include "newdb/status.h"
 #include "newdb/write_batch.h"
+#include <stdint.h>
+#include <stdio.h>
 
 namespace newdb {
 
@@ -24,31 +24,29 @@ struct WriteOptions;
 // A DB is safe for concurrent access from multiple threads without
 // any external synchronization.
 class DB {
- public:
+public:
   // Open the database with the specified "name".
   // Stores a pointer to a heap-allocated database in *dbptr and returns
   // OK on success.
   // Stores NULL in *dbptr and returns a non-OK status on error.
   // Caller should delete *dbptr when it is no longer needed.
-  static Status Open(const Options& options,
-                     const std::string& name,
-                     DB** dbptr);
+  static Status Open(const Options &options, const std::string &name,
+                     DB **dbptr);
 
-  DB() { }
-  virtual ~DB() {};
+  DB() {}
+  virtual ~DB(){};
 
   // Set the database entry for "key" to "value".  Returns OK on success,
   // and a non-OK status on error.
   // Note: consider setting options.sync = true.
-  virtual Status Put(const WriteOptions& options,
-                     const Slice& key,
-                     const Slice& value) = 0;
+  virtual Status Put(const WriteOptions &options, const Slice &key,
+                     const Slice &value) = 0;
 
   // Remove the database entry (if any) for "key".  Returns OK on
   // success, and a non-OK status on error.  It is not an error if "key"
   // did not exist in the database.
   // Note: consider setting options.sync = true.
-  virtual Status Delete(const WriteOptions& options, const Slice& key) = 0;
+  virtual Status Delete(const WriteOptions &options, const Slice &key) = 0;
 
   // Apply the specified updates to the database.
   // Returns OK on success, non-OK on failure.
@@ -62,8 +60,8 @@ class DB {
   // a status for which Status::IsNotFound() returns true.
   //
   // May return some other Status on an error.
-  virtual Status Get(const ReadOptions& options,
-                     const Slice& key, std::string* value) = 0;
+  virtual Status Get(const ReadOptions &options, const Slice &key,
+                     std::string *value) = 0;
 
   // Return a heap-allocated iterator over the contents of the database.
   // The result of NewIterator() is initially invalid (caller must
@@ -71,23 +69,21 @@ class DB {
   //
   // Caller should delete the iterator when it is no longer needed.
   // The returned iterator should be deleted before this db is deleted.
-  virtual Iterator* NewIterator(const ReadOptions& options) = 0;
+  virtual Iterator *NewIterator(const ReadOptions &options) = 0;
 
   virtual void flushVLog() = 0;
   virtual void vLogGarbageCollect() = 0;
 
- private:
+private:
   // No copying allowed
-  DB(const DB&);
-  void operator=(const DB&);
+  DB(const DB &);
+  void operator=(const DB &);
 };
 
 // Destroy the contents of the specified database.
 // Be very careful using this method.
-Status DestroyDB(const std::string& name, const Options& options);
+Status DestroyDB(const std::string &name, const Options &options);
 
-}  // namespace newdb
-
-
+} // namespace newdb
 
 #endif
