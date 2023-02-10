@@ -13,6 +13,7 @@
 #include <string.h>
 #include <string>
 
+#include "rocksdb/options.h"
 #include "newdb/slice.h"
 #include "newdb/statistics.h"
 
@@ -30,6 +31,11 @@ struct Options {
   // Table cache in number of files (only support LSM)
   // Default: 1000
   int maxOpenFiles;
+
+
+  // keydb and valuedb options
+  rocksdb::Options keydbOptions;
+  rocksdb::Options valuedbOptions;
 
   // Rocks Index LSM-Tree block size
   // Default: 4096

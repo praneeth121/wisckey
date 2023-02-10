@@ -19,22 +19,7 @@ namespace newdb {
 DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
       dbstats_(nullptr), sequence_(0) {
-  rocksdb::Options rocksOptions;
-  rocksOptions.IncreaseParallelism();
-  // rocksOptions.OptimizeLevelStyleCompaction();
-  rocksOptions.create_if_missing = true;
-  rocksOptions.max_open_files = options.maxOpenFiles;
-  rocksOptions.compression = rocksdb::kNoCompression;
-  rocksOptions.paranoid_checks = false;
-  rocksOptions.allow_mmap_reads = false;
-  rocksOptions.allow_mmap_writes = false;
-  rocksOptions.use_direct_io_for_flush_and_compaction = true;
-  rocksOptions.use_direct_reads = true;
-  rocksOptions.write_buffer_size = 64 << 20;
-  rocksOptions.target_file_size_base = 64 * 1048576;
-  rocksOptions.max_bytes_for_level_base = 64 * 1048576;
-  // dbstats_ = rocksdb::CreateDBStatistics();
-  // rocksOptions.statistics = dbstats_;
+
 
   // start thread pool for async i/o
   pool_ = threadpool_create(options.threadPoolThreadsNum,
@@ -43,7 +28,7 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
 
   // apply db options
   rocksdb::Status status =
-      rocksdb::DB::Open(rocksOptions, dbname + "keydb", &keydb_);
+      rocksdb::DB::Open(options.keydbOptions, dbname + "keydb", &keydb_);
   if (status.ok())
     printf("rocksdb open ok\n");
   else {
@@ -51,10 +36,20 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     printf("rocksdb open error: %s\n", status_str.c_str());
     exit(-1);
   }
-
-  rocksdb::Options valuedbOptions = rocksOptions;
-  valuedbOptions.compaction_filter_factory.reset(
-      new NewDbCompactionFilterFactory(keydb_));
+  rocksdb::Options valuedbOptions;
+  valuedbOptions.IncreaseParallelism();
+  valuedbOptions.create_if_missing = true;
+  valuedbOptions.max_open_files = -1;
+  valuedbOptions.compression = rocksdb::kNoCompression;
+  valuedbOptions.paranoid_checks = false;
+  valuedbOptions.allow_mmap_reads = false;
+  valuedbOptions.allow_mmap_writes = false;
+  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
+  valuedbOptions.use_direct_reads = true;
+  valuedbOptions.write_buffer_size = 1920;
+  valuedbOptions.target_file_size_base = 1920;
+  valuedbOptions.max_bytes_for_level_base = 1920;
+  valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
   if (status.ok())
     printf("rocksdb open ok\n");
@@ -214,8 +209,14 @@ void DBImpl::flushVLog() {
     printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
     it->Next();
   }
+  std::string stats;
+  valuedb_->GetProperty("rocksdb.stats", &stats);
+  printf("stats: %s\n", stats.c_str());
   printf("compaction started\n");
+  stats = "";
   valuedb_->CompactRange(rocksdb::CompactRangeOptions(), nullptr, nullptr);
+  valuedb_->GetProperty("rocksdb.stats", &stats);
+  printf("stats: %s\n", stats.c_str());
   printf("compaction done\n");
 
   it = keydb_->NewIterator(rdopts);

@@ -77,8 +77,11 @@ private:
   Options options_;
   std::string dbname_;
   // rocksdb for key-offset
+public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
+
+private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
   uint64_t sequence_;
   std::mutex seq_mutex_;
@@ -98,6 +101,8 @@ private:
   void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
                     std::vector<std::string> *vmeta_list, int idx, int size,
                     int *oldLogFD, int *newLogFD);
+  // rocksdb::DB* get_keydb() { return keydb_;};
+  // rocksdb::DB* get_valuedb() { return valuedb_;};
 
   // thread pool
   threadpool_t *pool_;

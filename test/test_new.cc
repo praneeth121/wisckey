@@ -8,15 +8,45 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 10
+#define TOTAL_RECORDS 10000
 
 int main() {
   newdb::DB *db_;
-  newdb::Options options_;
-  options_.statistics = newdb::Options::CreateDBStatistics();
 
-  // apply db options
-  newdb::Status status = newdb::DB::Open(options_, "test_newdb", &db_);
+
+  newdb::Options options_;
+
+  rocksdb::Options keydbOptions;
+  keydbOptions.IncreaseParallelism();
+  keydbOptions.create_if_missing = true;
+  keydbOptions.max_open_files = -1;
+  keydbOptions.compression = rocksdb::kNoCompression;
+  keydbOptions.paranoid_checks = false;
+  keydbOptions.allow_mmap_reads = false;
+  keydbOptions.allow_mmap_writes = false;
+  keydbOptions.use_direct_io_for_flush_and_compaction = true;
+  keydbOptions.use_direct_reads = true;
+  keydbOptions.write_buffer_size = 64 << 20;
+  keydbOptions.target_file_size_base = 64 * 1048576;
+  keydbOptions.max_bytes_for_level_base = 64 * 1048576;
+  options_.keydbOptions = keydbOptions;
+
+  rocksdb::Options valuedbOptions;
+  valuedbOptions.IncreaseParallelism();
+  valuedbOptions.create_if_missing = true;
+  valuedbOptions.max_open_files = -1;
+  valuedbOptions.compression = rocksdb::kNoCompression;
+  valuedbOptions.paranoid_checks = false;
+  valuedbOptions.allow_mmap_reads = false;
+  valuedbOptions.allow_mmap_writes = false;
+  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
+  valuedbOptions.use_direct_reads = true;
+  valuedbOptions.write_buffer_size = 1920;
+  valuedbOptions.target_file_size_base = 1920;
+  valuedbOptions.max_bytes_for_level_base = 1920;
+  options_.valuedbOptions = valuedbOptions;
+
+  newdb::Status status = newdb::DB::Open(options_, "", &db_);
   if (status.ok())
     printf("newdb open ok\n");
   else
@@ -58,9 +88,10 @@ int main() {
   printf("finished update records through iterator\n");
   delete it;
 
+
+
   db_->flushVLog();
 
-  // read back updated value
   it = db_->NewIterator(options);
   it->SeekToFirst();
   while (it->Valid()) {

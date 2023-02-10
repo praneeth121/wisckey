@@ -42,6 +42,9 @@ public:
     return Status(kIOError, msg, msg2);
   }
 
+  // Returns a C style string indicating the message of the Status
+  const char* getState() const { return state_; }
+  
   // Returns true iff the status indicates success.
   bool ok() const { return (state_ == NULL); }
 
@@ -84,6 +87,7 @@ private:
   Code code() const {
     return (state_ == NULL) ? kOk : static_cast<Code>(state_[4]);
   }
+
 
   Status(Code code, const Slice &msg, const Slice &msg2) {
     assert(code != kOk);
