@@ -1,0 +1,1258 @@
+curr timestamp:0
+got a request for persons: 2 7
+printing inventory
+	car 0: is available
+	car 1: is available
+	suv 0: is available
+	van 0: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 2 ride_length 7
+
+printing inventory
+	car 1: is available
+	suv 0: is available
+	van 0: is available
+	van 1: is available
+
+curr timestamp:1
+printing inventory
+	car 1: is available
+	suv 0: is available
+	van 0: is available
+	van 1: is available
+
+printing pending requests
+
+printing inventory
+	car 1: is available
+	suv 0: is available
+	van 0: is available
+	van 1: is available
+
+curr timestamp:2
+got a request for persons: 4 16
+printing inventory
+	car 1: is available
+	suv 0: is available
+	van 0: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 4 ride_length 16
+
+printing inventory
+	car 1: is available
+	van 0: is available
+	van 1: is available
+
+curr timestamp:3
+printing inventory
+	car 1: is available
+	van 0: is available
+	van 1: is available
+
+printing pending requests
+
+printing inventory
+	car 1: is available
+	van 0: is available
+	van 1: is available
+
+curr timestamp:4
+got a request for persons: 6 16
+printing inventory
+	car 1: is available
+	van 0: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 6 ride_length 16
+
+printing inventory
+	car 1: is available
+	van 1: is available
+
+curr timestamp:5
+printing inventory
+	car 1: is available
+	van 1: is available
+
+printing pending requests
+
+printing inventory
+	car 1: is available
+	van 1: is available
+
+curr timestamp:6
+got a request for persons: 5 13
+printing inventory
+	car 1: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 5 ride_length 13
+
+printing inventory
+	car 1: is available
+
+curr timestamp:7
+printing inventory
+	car 1: is available
+
+printing pending requests
+
+printing inventory
+	car 1: is available
+
+curr timestamp:8
+got a request for persons: 4 2
+printing inventory
+	car 0: is available
+	car 1: is available
+
+printing pending requests
+	request: persons 4 ride_length 2
+
+printing inventory
+	car 0: is available
+	car 1: is available
+
+curr timestamp:9
+printing inventory
+	car 0: is available
+	car 1: is available
+
+printing pending requests
+	request: persons 4 ride_length 2
+
+printing inventory
+	car 0: is available
+	car 1: is available
+
+curr timestamp:10
+got a request for persons: 3 8
+printing inventory
+	car 0: is available
+	car 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 4 ride_length 2
+
+printing inventory
+	car 1: is available
+
+curr timestamp:11
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 4 ride_length 2
+
+printing inventory
+	car 1: is available
+
+curr timestamp:12
+got a request for persons: 3 20
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 4 ride_length 2
+
+printing inventory
+
+curr timestamp:13
+printing inventory
+
+printing pending requests
+	request: persons 4 ride_length 2
+
+printing inventory
+
+curr timestamp:14
+got a request for persons: 6 7
+printing inventory
+
+printing pending requests
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:15
+printing inventory
+
+printing pending requests
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:16
+got a request for persons: 1 7
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 7
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:17
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 7
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:18
+got a request for persons: 5 17
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 7
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 17
+
+printing inventory
+
+curr timestamp:19
+printing inventory
+	car 0: is available
+	suv 0: is available
+
+printing pending requests
+	request: persons 1 ride_length 7
+	request: persons 4 ride_length 2
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 17
+
+printing inventory
+
+curr timestamp:20
+got a request for persons: 6 9
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 17
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:21
+printing inventory
+	van 0: is available
+
+printing pending requests
+	request: persons 5 ride_length 17
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:22
+got a request for persons: 4 10
+printing inventory
+	suv 0: is available
+
+printing pending requests
+	request: persons 4 ride_length 10
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:23
+printing inventory
+
+printing pending requests
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:24
+got a request for persons: 3 11
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:25
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:26
+got a request for persons: 3 4
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 3 ride_length 4
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:27
+printing inventory
+	car 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 3 ride_length 4
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:28
+got a request for persons: 2 16
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+	request: persons 6 ride_length 9
+
+printing inventory
+
+curr timestamp:29
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+
+printing inventory
+
+curr timestamp:30
+got a request for persons: 6 3
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+	request: persons 6 ride_length 3
+
+printing inventory
+
+curr timestamp:31
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+	request: persons 6 ride_length 3
+
+printing inventory
+
+curr timestamp:32
+got a request for persons: 1 19
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+	request: persons 1 ride_length 19
+	request: persons 6 ride_length 3
+
+printing inventory
+
+curr timestamp:33
+printing inventory
+	car 1: is available
+	suv 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 4
+	request: persons 2 ride_length 16
+	request: persons 1 ride_length 19
+	request: persons 6 ride_length 3
+
+printing inventory
+
+curr timestamp:34
+got a request for persons: 6 8
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 6 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:35
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 6 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:36
+got a request for persons: 2 17
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 2 ride_length 17
+	request: persons 6 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:37
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 2 ride_length 17
+	request: persons 6 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:38
+got a request for persons: 2 3
+printing inventory
+	car 1: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 2 ride_length 17
+	request: persons 2 ride_length 3
+	request: persons 6 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:39
+printing inventory
+	car 0: is available
+	van 0: is available
+
+printing pending requests
+	request: persons 2 ride_length 17
+	request: persons 2 ride_length 3
+	request: persons 6 ride_length 8
+
+printing inventory
+
+curr timestamp:40
+got a request for persons: 4 14
+printing inventory
+
+printing pending requests
+	request: persons 2 ride_length 3
+	request: persons 4 ride_length 14
+
+printing inventory
+
+curr timestamp:41
+printing inventory
+
+printing pending requests
+	request: persons 2 ride_length 3
+	request: persons 4 ride_length 14
+
+printing inventory
+
+curr timestamp:42
+got a request for persons: 4 20
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 2 ride_length 3
+	request: persons 4 ride_length 14
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:43
+printing inventory
+
+printing pending requests
+	request: persons 4 ride_length 14
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:44
+got a request for persons: 3 18
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 4 ride_length 14
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:45
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 4 ride_length 14
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:46
+got a request for persons: 3 5
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 14
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:47
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 20
+
+printing inventory
+
+curr timestamp:48
+got a request for persons: 6 11
+printing inventory
+	van 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 20
+	request: persons 6 ride_length 11
+
+printing inventory
+
+curr timestamp:49
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 3 ride_length 5
+	request: persons 6 ride_length 11
+
+printing inventory
+
+curr timestamp:50
+got a request for persons: 6 7
+printing inventory
+	suv 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 18
+	request: persons 3 ride_length 5
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:51
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:52
+got a request for persons: 2 1
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:53
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:54
+got a request for persons: 3 14
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 3 ride_length 14
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:55
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 3 ride_length 14
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:56
+got a request for persons: 3 11
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 3 ride_length 14
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:57
+printing inventory
+	car 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 1
+	request: persons 3 ride_length 14
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+
+printing inventory
+
+curr timestamp:58
+got a request for persons: 5 2
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 2 ride_length 1
+	request: persons 3 ride_length 14
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:59
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 14
+	request: persons 3 ride_length 11
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:60
+got a request for persons: 4 6
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 14
+	request: persons 3 ride_length 11
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:61
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 11
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:62
+got a request for persons: 3 8
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 3 ride_length 8
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:63
+printing inventory
+	car 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 11
+	request: persons 3 ride_length 8
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:64
+got a request for persons: 3 6
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:65
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+
+printing inventory
+
+curr timestamp:66
+got a request for persons: 5 10
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:67
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:68
+got a request for persons: 2 18
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:69
+printing inventory
+	suv 0: is available
+	van 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 4 ride_length 6
+	request: persons 6 ride_length 7
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:70
+got a request for persons: 1 16
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:71
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:72
+got a request for persons: 1 6
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:73
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 5 ride_length 2
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:74
+got a request for persons: 3 8
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:75
+printing inventory
+	car 0: is available
+	car 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 6
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:76
+got a request for persons: 3 5
+printing inventory
+	suv 0: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 2 ride_length 18
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 5 ride_length 10
+
+printing inventory
+
+curr timestamp:77
+printing inventory
+	van 0: is available
+
+printing pending requests
+	request: persons 1 ride_length 16
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+
+printing inventory
+
+curr timestamp:78
+got a request for persons: 4 11
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:79
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:80
+got a request for persons: 2 9
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:81
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:82
+got a request for persons: 1 19
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 1 ride_length 6
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:83
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:84
+got a request for persons: 3 5
+printing inventory
+	car 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 8
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:85
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+
+printing inventory
+
+curr timestamp:86
+got a request for persons: 4 12
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:87
+printing inventory
+	van 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:88
+got a request for persons: 3 20
+printing inventory
+
+printing pending requests
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:89
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 2 ride_length 9
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:90
+got a request for persons: 1 1
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:91
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:92
+got a request for persons: 3 9
+printing inventory
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:93
+printing inventory
+	car 0: is available
+	van 1: is available
+
+printing pending requests
+	request: persons 1 ride_length 19
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 4 ride_length 11
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:94
+got a request for persons: 2 13
+printing inventory
+	van 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 5
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:95
+printing inventory
+	suv 0: is available
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 4 ride_length 12
+
+printing inventory
+
+curr timestamp:96
+got a request for persons: 5 7
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 5 ride_length 7
+
+printing inventory
+
+curr timestamp:97
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 5 ride_length 7
+
+printing inventory
+
+curr timestamp:98
+got a request for persons: 1 20
+printing inventory
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 1 ride_length 20
+	request: persons 5 ride_length 7
+
+printing inventory
+
+curr timestamp:99
+printing inventory
+	car 1: is available
+
+printing pending requests
+	request: persons 3 ride_length 20
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 1 ride_length 20
+	request: persons 5 ride_length 7
+
+printing inventory
+
+curr timestamp:100
+got a request for persons: 4 11
+printing inventory
+	van 0: is available
+
+printing pending requests
+	request: persons 1 ride_length 1
+	request: persons 3 ride_length 9
+	request: persons 2 ride_length 13
+	request: persons 1 ride_length 20
+	request: persons 4 ride_length 11
+	request: persons 5 ride_length 7
+
+printing inventory
+

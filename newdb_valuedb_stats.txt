@@ -1,0 +1,44 @@
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   124.65 MB   1.9      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1251.0         0         2    0.050       0      0
+ Sum      2/0   124.65 MB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1251.0         0         2    0.050       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1251.0         0         2    0.050       0      0
+Uptime(secs): 0.5 total, 0.5 interval
+Flush(GB): cumulative 0.122, interval 0.122
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.12 GB write, 270.28 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Interval compaction: 0.12 GB write, 270.28 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   124.65 MB   1.9      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1251.0         0         2    0.050       0      0
+ Sum      2/0   124.65 MB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1251.0         0         2    0.050       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+Uptime(secs): 0.5 total, 0.0 interval
+Flush(GB): cumulative 0.122, interval 0.000
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.12 GB write, 270.21 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Interval compaction: 0.00 GB write, 0.00 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.0 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+2023/02/08-11:00:12.170223 7f723e7fc700 [db/compaction_job.cc:1446] [default] [JOB 5] Compacting 2@0 files to L1, score 1.95
+2023/02/08-11:00:12.170236 7f723e7fc700 [db/compaction_job.cc:1452] [default] Compaction start summary: Base version 4 Base level 0, inputs: [12(62MB) 10(62MB)]
+2023/02/08-11:00:12.170353 7f723e7fc700 EVENT_LOG_v1 {"time_micros": 1675875612170291, "job": 5, "event": "compaction_started", "files_L0": [12, 10], "score": 1.94762, "input_data_size": 130702581}
+2023/02/08-11:00:12.261578 7f720e7fc700 [db/db_impl_write.cc:1147] [default] New memtable created with log file: #14. Immutable memtables: 0.
+2023/02/08-11:00:12.261699 7f723d7fa700 [db/db_impl_compaction_flush.cc:48] [JOB 6] Syncing log #11
+2023/02/08-11:00:12.297833 7f723d7fa700 (Original Log Time 2023/02/08-11:00:12.261675) [db/db_impl_compaction_flush.cc:1232] Calling FlushMemTableToOutputFile with column family [default], flush slots available 1, compaction slots available 1, flush slots scheduled 1, compaction slots scheduled 1
+2023/02/08-11:00:12.297840 7f723d7fa700 [db/flush_job.cc:261] [default] [JOB 6] Flushing memtable with next log file: 14
+2023/02/08-11:00:12.297860 7f723d7fa700 EVENT_LOG_v1 {"time_micros": 1675875612297855, "job": 6, "event": "flush_started", "num_memtables": 1, "num_entries": 15675, "num_deletes": 0, "memory_usage": 65017024}
+2023/02/08-11:00:12.297863 7f723d7fa700 [db/flush_job.cc:290] [default] [JOB 6] Level-0 flush table #15: started

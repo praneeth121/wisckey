@@ -1,0 +1,99 @@
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   64.27 MB   1.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1139.8         0         2    0.028       0      0
+  L1      1/0    1.50 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L2     11/0   19.45 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L3    129/0   198.87 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L4   1080/0    1.95 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L5   1620/0    2.60 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+ Sum   2843/0    4.83 GB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1139.8         0         2    0.028       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1139.8         0         2    0.028       0      0
+Uptime(secs): 0.8 total, 0.8 interval
+Flush(GB): cumulative 0.063, interval 0.063
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.06 GB write, 77.24 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Interval compaction: 0.06 GB write, 77.24 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   64.27 MB   1.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1139.8         0         2    0.028       0      0
+  L1      1/0    1.50 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L2     11/0   19.45 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L3    129/0   198.87 MB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L4   1080/0    1.95 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+  L5   1620/0    2.60 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+ Sum   2843/0    4.83 GB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0   1139.8         0         2    0.028       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+Uptime(secs): 0.8 total, 0.0 interval
+Flush(GB): cumulative 0.063, interval 0.000
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.06 GB write, 77.22 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.1 seconds
+Interval compaction: 0.00 GB write, 0.00 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.0 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+2023/02/08-07:57:29.362148 7fe5b3fff700 [db/compaction_job.cc:1446] [default] [JOB 4] Compacting 2@0 + 1@1 files to L1, score 1.00
+2023/02/08-07:57:29.362163 7fe5b3fff700 [db/compaction_job.cc:1452] [default] Compaction start summary: Base version 3 Base level 0, inputs: [54890(62MB) 54884(1987KB)], [54504(1540KB)]
+2023/02/08-07:57:29.362206 7fe5b3fff700 EVENT_LOG_v1 {"time_micros": 1675864649362178, "job": 4, "event": "compaction_started", "files_L0": [54890, 54884], "files_L1": [54504], "score": 1.00416, "input_data_size": 68965945}
+2023/02/08-07:57:29.391571 7fe5827fc700 [db/db_impl_write.cc:1147] [default] New memtable created with log file: #54892. Immutable memtables: 0.
+--
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0     15/11   2.74 GB   3.9     74.3     0.0     74.3     139.2     64.9       0.0   2.1     83.3    156.2       912      1318    0.692     19M      0
+  L1     16/13  1011.20 MB   2.7     78.4    62.2     16.2      78.4     62.2       0.0   1.3    273.8    273.9       293        22   13.325     20M      0
+  L2     50/13   3.13 GB   3.7     25.5    17.9      7.6      25.5     17.9      43.3   1.4     74.0     74.0       353       122    2.897   6588K   5609
+  L3    100/7    6.20 GB   0.9    149.8    54.2     95.6     149.6     54.0       3.8   2.8     68.3     68.2      2245       805    2.789     38M    50K
+  L4    867/0   51.86 GB   0.8    154.7    51.8    102.9     152.8     49.9       0.0   2.9     70.4     69.6      2249       795    2.830     39M   502K
+  L5   1620/0    2.60 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+ Sum   2668/44  67.52 GB   0.0    482.8   186.1    296.6     545.5    248.9      47.1   8.4     81.7     92.3      6054      3062    1.977    124M   558K
+ Int      0/0    0.00 KB   0.0    482.8   186.1    296.6     545.5    248.8      47.1   8.4     81.7     92.3      6054      3060    1.978    124M   558K
+Uptime(secs): 601.0 total, 600.2 interval
+Flush(GB): cumulative 64.885, interval 64.822
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 545.52 GB write, 929.43 MB/s write, 482.77 GB read, 822.51 MB/s read, 6053.8 seconds
+Interval compaction: 545.46 GB write, 930.61 MB/s write, 482.77 GB read, 823.65 MB/s read, 6053.8 seconds
+Stalls(count): 289 level0_slowdown, 289 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 17 slowdown for pending_compaction_bytes, 2443 memtable_compaction, 0 memtable_slowdown, interval 2749 total count
+
+** File Read Latency Histogram By Level [default] **
+
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0     15/11   2.74 GB   3.9     74.3     0.0     74.3     139.2     64.9       0.0   2.1     83.3    156.2       912      1318    0.692     19M      0
+  L1     16/13  1011.20 MB   2.7     78.4    62.2     16.2      78.4     62.2       0.0   1.3    273.8    273.9       293        22   13.325     20M      0
+  L2     50/13   3.13 GB   3.7     25.5    17.9      7.6      25.5     17.9      43.3   1.4     74.0     74.0       353       122    2.897   6588K   5609
+  L3    100/7    6.20 GB   0.9    149.8    54.2     95.6     149.6     54.0       3.8   2.8     68.3     68.2      2245       805    2.789     38M    50K
+  L4    867/0   51.86 GB   0.8    154.7    51.8    102.9     152.8     49.9       0.0   2.9     70.4     69.6      2249       795    2.830     39M   502K
+  L5   1620/0    2.60 GB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+ Sum   2668/44  67.52 GB   0.0    482.8   186.1    296.6     545.5    248.9      47.1   8.4     81.7     92.3      6054      3062    1.977    124M   558K
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+Uptime(secs): 601.0 total, 0.0 interval
+Flush(GB): cumulative 64.885, interval 0.000
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 545.52 GB write, 929.43 MB/s write, 482.77 GB read, 822.51 MB/s read, 6053.8 seconds
+Interval compaction: 0.00 GB write, 0.00 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.0 seconds
+Stalls(count): 289 level0_slowdown, 289 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 17 slowdown for pending_compaction_bytes, 2443 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+2023/02/08-08:07:29.558932 7fe5e0c79700 [db/compaction_job.cc:1446] [default] [JOB 5466] Compacting 4@0 files to L0, score 3.90
+2023/02/08-08:07:29.558945 7fe5e0c79700 [db/compaction_job.cc:1452] [default] Compaction start summary: Base version 3268 Base level 0, inputs: [64200(62MB) 64173(62MB) 64170(62MB) 64168(62MB)]
+2023/02/08-08:07:29.558981 7fe5e0c79700 EVENT_LOG_v1 {"time_micros": 1675865249558964, "job": 5466, "event": "compaction_started", "files_L0": [64200, 64173, 64170, 64168], "score": 3.8954, "input_data_size": 261415669}
+2023/02/08-08:07:29.663801 7fe5b2ffd700 EVENT_LOG_v1 {"time_micros": 1675865249663762, "cf_name": "default", "job": 5465, "event": "table_file_creation", "file_number": 64210, "file_size": 65357935, "table_properties": {"data_size": 64967448, "index_size": 389599, "filter_size": 0, "raw_key_size": 376896, "raw_average_key_size": 24, "raw_value_size": 64323584, "raw_average_value_size": 4096, "num_data_blocks": 15704, "num_entries": 15704, "filter_policy_name": "", "kDeletedKeys": "0", "kMergeOperands": "0"}}

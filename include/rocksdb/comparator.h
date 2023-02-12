@@ -79,6 +79,9 @@ extern const Comparator* BytewiseComparator();
 // ordering.
 extern const Comparator* ReverseBytewiseComparator();
 
+// needed for new db
+extern const Comparator* Uint64Comparator();
+
 }  // namespace rocksdb
 
 #endif  // STORAGE_ROCKSDB_INCLUDE_COMPARATOR_H_

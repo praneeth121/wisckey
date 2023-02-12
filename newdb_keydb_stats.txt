@@ -1,0 +1,44 @@
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   77.02 MB   1.2      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0     78.2         1         2    0.492       0      0
+ Sum      2/0   77.02 MB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0     78.2         1         2    0.492       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0     78.2         1         2    0.492       0      0
+Uptime(secs): 52.9 total, 52.9 interval
+Flush(GB): cumulative 0.075, interval 0.075
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.08 GB write, 1.45 MB/s write, 0.00 GB read, 0.00 MB/s read, 1.0 seconds
+Interval compaction: 0.08 GB write, 1.45 MB/s write, 0.00 GB read, 0.00 MB/s read, 1.0 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+
+** Compaction Stats [default] **
+Level    Files   Size     Score Read(GB)  Rn(GB) Rnp1(GB) Write(GB) Wnew(GB) Moved(GB) W-Amp Rd(MB/s) Wr(MB/s) Comp(sec) Comp(cnt) Avg(sec) KeyIn KeyDrop
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+  L0      2/0   77.02 MB   1.2      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0     78.2         1         2    0.492       0      0
+ Sum      2/0   77.02 MB   0.0      0.0     0.0      0.0       0.1      0.1       0.0   1.0      0.0     78.2         1         2    0.492       0      0
+ Int      0/0    0.00 KB   0.0      0.0     0.0      0.0       0.0      0.0       0.0   0.0      0.0      0.0         0         0    0.000       0      0
+Uptime(secs): 52.9 total, 0.0 interval
+Flush(GB): cumulative 0.075, interval 0.000
+AddFile(GB): cumulative 0.000, interval 0.000
+AddFile(Total Files): cumulative 0, interval 0
+AddFile(L0 Files): cumulative 0, interval 0
+AddFile(Keys): cumulative 0, interval 0
+Cumulative compaction: 0.08 GB write, 1.45 MB/s write, 0.00 GB read, 0.00 MB/s read, 1.0 seconds
+Interval compaction: 0.00 GB write, 0.00 MB/s write, 0.00 GB read, 0.00 MB/s read, 0.0 seconds
+Stalls(count): 0 level0_slowdown, 0 level0_slowdown_with_compaction, 0 level0_numfiles, 0 level0_numfiles_with_compaction, 0 stop for pending_compaction_bytes, 0 slowdown for pending_compaction_bytes, 0 memtable_compaction, 0 memtable_slowdown, interval 0 total count
+
+** File Read Latency Histogram By Level [default] **
+2023/02/08-11:01:04.652798 7f726530a700 [db/compaction_job.cc:1446] [default] [JOB 5] Compacting 2@0 files to L1, score 1.20
+2023/02/08-11:01:04.652808 7f726530a700 [db/compaction_job.cc:1452] [default] Compaction start summary: Base version 4 Base level 0, inputs: [12(38MB) 10(38MB)]
+2023/02/08-11:01:04.652886 7f726530a700 EVENT_LOG_v1 {"time_micros": 1675875664652870, "job": 5, "event": "compaction_started", "files_L0": [12, 10], "score": 1.20342, "input_data_size": 80760349}
+2023/02/08-11:01:05.395511 7f726530a700 [db/compaction_job.cc:1139] [default] [JOB 5] Generated table #13: 2165708 keys, 67547970 bytes
+2023/02/08-11:01:05.395531 7f726530a700 EVENT_LOG_v1 {"time_micros": 1675875665395523, "cf_name": "default", "job": 5, "event": "table_file_creation", "file_number": 13, "file_size": 67547970, "table_properties": {"data_size": 67109024, "index_size": 438054, "filter_size": 0, "raw_key_size": 51976992, "raw_average_key_size": 24, "raw_value_size": 17325664, "raw_average_value_size": 8, "num_data_blocks": 16444, "num_entries": 2165708, "filter_policy_name": "", "kDeletedKeys": "0", "kMergeOperands": "0"}}
+2023/02/08-11:01:05.511692 7f726530a700 [db/compaction_job.cc:1139] [default] [JOB 5] Generated table #14: 400577 keys, 12494237 bytes
+2023/02/08-11:01:05.511713 7f726530a700 EVENT_LOG_v1 {"time_micros": 1675875665511705, "cf_name": "default", "job": 5, "event": "table_file_creation", "file_number": 14, "file_size": 12494237, "table_properties": {"data_size": 12412725, "index_size": 80622, "filter_size": 0, "raw_key_size": 9613848, "raw_average_key_size": 24, "raw_value_size": 3204616, "raw_average_value_size": 8, "num_data_blocks": 3042, "num_entries": 400577, "filter_policy_name": "", "kDeletedKeys": "0", "kMergeOperands": "0"}}
+2023/02/08-11:01:05.512042 7f726530a700 [db/compaction_job.cc:1208] [default] [JOB 5] Compacted 2@0 files to L1 => 80042207 bytes
+2023/02/08-11:01:05.512221 7f726530a700 (Original Log Time 2023/02/08-11:01:05.512191) [db/compaction_job.cc:615] [default] compacted to: base level 1 max bytes base 67108864 files[0 2 0 0 0 0 0] max score 1.19, MB/sec: 94.0 rd, 93.2 wr, level 1, files in(2, 0) out(2) MB in(77.0, 0.0) out(76.3), read-write-amplify(2.0) write-amplify(1.0) OK, records in: 2566285, records dropped: 0

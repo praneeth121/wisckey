@@ -50,6 +50,7 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
   valuedbOptions.target_file_size_base = 1920;
   valuedbOptions.max_bytes_for_level_base = 1920;
   valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
+  valuedbOptions.comparator = rocksdb::Uint64Comparator();
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
   if (status.ok())
     printf("rocksdb open ok\n");
