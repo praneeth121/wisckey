@@ -525,94 +525,124 @@ int main(int argc, char *argv[]) {
   
 
   newdb::Options options;
+  rocksdb::Options keydbOptions;
+  keydbOptions.IncreaseParallelism();
+  keydbOptions.create_if_missing = true;
+  keydbOptions.max_open_files = -1;
+  keydbOptions.compression = rocksdb::kNoCompression;
+  keydbOptions.paranoid_checks = false;
+  keydbOptions.allow_mmap_reads = false;
+  keydbOptions.allow_mmap_writes = false;
+  keydbOptions.use_direct_io_for_flush_and_compaction = true;
+  keydbOptions.use_direct_reads = true;
+  keydbOptions.write_buffer_size = 64 << 20;
+  keydbOptions.target_file_size_base = 64 * 1048576;
+  keydbOptions.max_bytes_for_level_base = 64 * 1048576;
+  options.keydbOptions = keydbOptions;
+
+  rocksdb::Options valuedbOptions;
+  valuedbOptions.IncreaseParallelism();
+  valuedbOptions.create_if_missing = true;
+  valuedbOptions.max_open_files = -1;
+  valuedbOptions.compression = rocksdb::kNoCompression;
+  valuedbOptions.paranoid_checks = false;
+  valuedbOptions.allow_mmap_reads = false;
+  valuedbOptions.allow_mmap_writes = false;
+  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
+  valuedbOptions.use_direct_reads = true;
+  valuedbOptions.write_buffer_size = 64 << 20;
+  valuedbOptions.target_file_size_base = 64 * 1048576;
+  valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
+  options.valuedbOptions = valuedbOptions;
+
   options.statistics = newdb::Options::CreateDBStatistics();
   
   newdb::DB *db = NULL;
   newdb::DB::Open(options, dev_path, &db);
   
   // debug code
-  db->flushVLog();
-  delete db;
+  // db->flushVLog();
+  // delete db;
   // endcode
 
-//   thread_args args[t];
-//   pthread_t tid[t];
-//   printf("dev: %s, klen: %d, vlen: %d, num_ios: %d, t: %d\n", dev_path, klen, vlen, num_ios, t);
+  thread_args args[t];
+  pthread_t tid[t];
+  printf("dev: %s, klen: %d, vlen: %d, num_ios: %d, t: %d\n", dev_path, klen, vlen, num_ios, t);
 
-//   char *keys = nullptr;
-//   if (key_gen == 1) {
-//     prepare_keys(start_record, num_ios * t, klen, kmode, keys);
-//     printf("Prepare %lu %d bytes keys\n", (long)num_ios*t, klen);
-//   }
+  char *keys = nullptr;
+  if (key_gen == 1) {
+    prepare_keys(start_record, num_ios * t, klen, kmode, keys);
+    printf("Prepare %lu %d bytes keys\n", (long)num_ios*t, klen);
+  }
 
-//   struct timespec t1, t2;
-//   clock_gettime(CLOCK_REALTIME, &t1);
-//   int total_ops = num_ios*t;
-//   if (op_type == 1) total_ops = num_ios*t;
-//   else if (op_type == 2) total_ops = num_rds*t;
-//   std::thread stat_thread(stats_thread, total_ops, STATS_POOL_INT, 1, 10, stats_mode);
+  struct timespec t1, t2;
+  clock_gettime(CLOCK_REALTIME, &t1);
+  int total_ops = num_ios*t;
+  if (op_type == 1) total_ops = num_ios*t;
+  else if (op_type == 2) total_ops = num_rds*t;
+  std::thread stat_thread(stats_thread, total_ops, STATS_POOL_INT, 1, 10, stats_mode);
 
-//   for(int i = 0; i < t; i++){
-//     args[i].id = i;
-//     args[i].klen = klen;
-//     args[i].vlen = vlen;
-//     args[i].count = num_ios;
-//     args[i].db = db;
-//     args[i].op_type = op_type;
-//     args[i].keys = keys + (long)i*num_ios*klen;
-//     args[i].rd_nums = num_rds;
-//     args[i].key_mode = kmode;
-//     args[i].key_offset = start_record;
-//     pthread_attr_t *attr = (pthread_attr_t *)malloc(sizeof(pthread_attr_t));
-//     cpu_set_t cpus;
-//     pthread_attr_init(attr);
-//     CPU_ZERO(&cpus);
-//     CPU_SET(i, &cpus); // CPU 0
-//     pthread_attr_setaffinity_np(attr, sizeof(cpu_set_t), &cpus);
+  for(int i = 0; i < t; i++){
+    args[i].id = i;
+    args[i].klen = klen;
+    args[i].vlen = vlen;
+    args[i].count = num_ios;
+    args[i].db = db;
+    args[i].op_type = op_type;
+    args[i].keys = keys + (long)i*num_ios*klen;
+    args[i].rd_nums = num_rds;
+    args[i].key_mode = kmode;
+    args[i].key_offset = start_record;
+    pthread_attr_t *attr = (pthread_attr_t *)malloc(sizeof(pthread_attr_t));
+    cpu_set_t cpus;
+    pthread_attr_init(attr);
+    CPU_ZERO(&cpus);
+    CPU_SET(i, &cpus); // CPU 0
+    pthread_attr_setaffinity_np(attr, sizeof(cpu_set_t), &cpus);
 
-//     ret = pthread_create(&tid[i], attr, iothread, &args[i]);
-//     if (ret != 0) { 
-//       fprintf(stderr, "thread exit\n");
-//       free(attr);
-//       return FAILED;
-//     }
-//     pthread_attr_destroy(attr);
-//     free(attr);
-//   }
+    ret = pthread_create(&tid[i], attr, iothread, &args[i]);
+    if (ret != 0) { 
+      fprintf(stderr, "thread exit\n");
+      free(attr);
+      return FAILED;
+    }
+    pthread_attr_destroy(attr);
+    free(attr);
+  }
 
-//   for(int i = 0; i < t; i++) {
-//     pthread_join(tid[i], 0);
-//   }
+  for(int i = 0; i < t; i++) {
+    pthread_join(tid[i], 0);
+  }
 
-//   if(op_type == READ_OP) {
-//     clock_gettime(CLOCK_REALTIME, &t2);
-//     unsigned long long start, end;
-//     start = t1.tv_sec * 1000000000L + t1.tv_nsec;
-//     end = t2.tv_sec * 1000000000L + t2.tv_nsec;
-//     double sec = (double)(end - start) / 1000000000L;
-//     fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_rds * t /sec );
-//   }
-//   if(op_type == WRITE_OP) {
-//     clock_gettime(CLOCK_REALTIME, &t2);
-//     unsigned long long start, end;
-//     start = t1.tv_sec * 1000000000L + t1.tv_nsec;
-//     end = t2.tv_sec * 1000000000L + t2.tv_nsec;
-//     double sec = (double)(end - start) / 1000000000L;
-//     fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_ios * t /sec );
-//   }
+  if(op_type == READ_OP) {
+    clock_gettime(CLOCK_REALTIME, &t2);
+    unsigned long long start, end;
+    start = t1.tv_sec * 1000000000L + t1.tv_nsec;
+    end = t2.tv_sec * 1000000000L + t2.tv_nsec;
+    double sec = (double)(end - start) / 1000000000L;
+    fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_rds * t /sec );
+  }
+  if(op_type == WRITE_OP) {
+    clock_gettime(CLOCK_REALTIME, &t2);
+    unsigned long long start, end;
+    start = t1.tv_sec * 1000000000L + t1.tv_nsec;
+    end = t2.tv_sec * 1000000000L + t2.tv_nsec;
+    double sec = (double)(end - start) / 1000000000L;
+    fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_ios * t /sec );
+  }
 
-//   stats_end.store(true) ;
-//   sleep(1);
-//   stat_thread.join();
-//   fprintf(stdout, "Total operation keys %lu\n", ops_keys.load());
+  stats_end.store(true) ;
+  sleep(1);
+  stat_thread.join();
+  fprintf(stdout, "Total operation keys %lu\n", ops_keys.load());
 
-// #ifdef PERF_RD_LAT
-//   proc_rd_lat(t, args);
-// #endif
+#ifdef PERF_RD_LAT
+  proc_rd_lat(t, args);
+#endif
 
-//   delete db;
+  delete db;
 
-//   free(keys);
+  free(keys);
   
   return SUCCESS;
 }

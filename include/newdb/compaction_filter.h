@@ -44,6 +44,7 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
                                 std::string * /*new_value*/,
                                 std::string * /*skip_until*/) const {
 
+  fprintf(stdout, "compaction filter is called\n");
   const char *ptr = existing_value.data();
   int key_len = *((uint8_t *)ptr);
   ptr += sizeof(uint8_t);

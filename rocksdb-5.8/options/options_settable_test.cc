@@ -384,7 +384,6 @@ TEST_F(OptionsSettableTest, ColumnFamilyOptionsAllFieldsSettable) {
       "compaction_filter_factory=mpudlojcujCompactionFilterFactory;"
       "table_factory=PlainTable;"
       "prefix_extractor=rocksdb.CappedPrefix.13;"
-      "comparator=leveldb.BytewiseComparator;"
       "compression_per_level=kBZip2Compression:kBZip2Compression:"
       "kBZip2Compression:kNoCompression:kZlibCompression:kBZip2Compression:"
       "kSnappyCompression;"

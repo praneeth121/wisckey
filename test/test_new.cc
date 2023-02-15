@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 10000
+#define TOTAL_RECORDS 150000
 
 int main() {
   newdb::DB *db_;
@@ -41,9 +41,9 @@ int main() {
   valuedbOptions.allow_mmap_writes = false;
   valuedbOptions.use_direct_io_for_flush_and_compaction = true;
   valuedbOptions.use_direct_reads = true;
-  valuedbOptions.write_buffer_size = 1920;
-  valuedbOptions.target_file_size_base = 1920;
-  valuedbOptions.max_bytes_for_level_base = 1920;
+  valuedbOptions.write_buffer_size = 64 << 20;
+  valuedbOptions.target_file_size_base = 64 * 1048576;
+  valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
   options_.valuedbOptions = valuedbOptions;
 
   newdb::Status status = newdb::DB::Open(options_, "", &db_);
@@ -90,7 +90,7 @@ int main() {
 
 
 
-  db_->flushVLog();
+  // db_->flushVLog();
 
   it = db_->NewIterator(options);
   it->SeekToFirst();

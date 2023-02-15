@@ -7,6 +7,7 @@
 #include <rocksdb/db.h>
 #include <rocksdb/merge_operator.h>
 #include <rocksdb/options.h>
+#include <rocksdb/comparator.h>
 
 class MyMerge : public rocksdb::MergeOperator {
  public:
@@ -68,6 +69,7 @@ int main() {
   options.create_if_missing = true;
   options.merge_operator.reset(new MyMerge);
   options.compaction_filter = &filter;
+  options.comparator = rocksdb::Uint64Comparator();
   status = rocksdb::DB::Open(options, "/tmp/rocksmergetest", &raw_db);
   assert(status.ok());
   std::unique_ptr<rocksdb::DB> db(raw_db);
@@ -82,6 +84,6 @@ int main() {
   db->CompactRange(rocksdb::CompactRangeOptions(), nullptr, nullptr);
   fprintf(stderr, "filter.count_ = %d\n", filter.count_);
   assert(filter.count_ == 0);
-  fprintf(stderr, "filter.merge_count_ = %d\n", filter.merge_count_);
+  fprintf(stdout, "filter.merge_count_ = %d\n", filter.merge_count_);
   assert(filter.merge_count_ == 6);
 }

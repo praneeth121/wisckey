@@ -36,21 +36,10 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     printf("rocksdb open error: %s\n", status_str.c_str());
     exit(-1);
   }
-  rocksdb::Options valuedbOptions;
-  valuedbOptions.IncreaseParallelism();
-  valuedbOptions.create_if_missing = true;
-  valuedbOptions.max_open_files = -1;
-  valuedbOptions.compression = rocksdb::kNoCompression;
-  valuedbOptions.paranoid_checks = false;
-  valuedbOptions.allow_mmap_reads = false;
-  valuedbOptions.allow_mmap_writes = false;
-  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
-  valuedbOptions.use_direct_reads = true;
-  valuedbOptions.write_buffer_size = 1920;
-  valuedbOptions.target_file_size_base = 1920;
-  valuedbOptions.max_bytes_for_level_base = 1920;
+  rocksdb::Options valuedbOptions = options.valuedbOptions;
   valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
+
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
   if (status.ok())
     printf("rocksdb open ok\n");

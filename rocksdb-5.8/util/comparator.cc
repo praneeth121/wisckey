@@ -126,12 +126,8 @@ class Uint64ComparatorImpl : public Comparator {
 
   virtual int Compare(const Slice& a, const Slice& b) const override {
     assert(a.size() == sizeof(uint64_t) && b.size() == sizeof(uint64_t));
-    const uint64_t* left = reinterpret_cast<const uint64_t*>(a.data());
-    const uint64_t* right = reinterpret_cast<const uint64_t*>(b.data());
-    uint64_t leftValue;
-    uint64_t rightValue;
-    GetUnaligned(left, &leftValue);
-    GetUnaligned(right, &rightValue);
+    uint64_t leftValue = *((uint64_t*)a.data());
+    uint64_t rightValue = *((uint64_t*)b.data());
     if (leftValue == rightValue) {
       return 0;
     } else if (leftValue < rightValue) {
