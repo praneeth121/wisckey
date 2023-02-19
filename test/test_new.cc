@@ -52,53 +52,55 @@ int main() {
   else
     printf("newdb open error\n");
 
-  // write some records
-  for (int i = 0; i < TOTAL_RECORDS; i++) {
-    char key[16] = {0};
-    char val[128] = {0};
-    sprintf(key, "%0*ld", 16 - 1, i);
-    sprintf(val, "value%ld", i);
-    newdb::Slice rkey(key, 16);
-    newdb::Slice rval(val, 128);
+  // read the sst tables of the key database?
 
-    db_->Put(newdb::WriteOptions(), rkey, rval);
+  // // write some records
+  // for (int i = 0; i < TOTAL_RECORDS; i++) {
+  //   char key[16] = {0};
+  //   char val[128] = {0};
+  //   sprintf(key, "%0*ld", 16 - 1, i);
+  //   sprintf(val, "value%ld", i);
+  //   newdb::Slice rkey(key, 16);
+  //   newdb::Slice rval(val, 128);
 
-    std::string gval;
-    db_->Get(newdb::ReadOptions(), rkey, &gval);
-    printf("key %s, value %s\n", rkey.data(), gval.c_str());
-  }
-  printf("finished load records\n");
+  //   db_->Put(newdb::WriteOptions(), rkey, rval);
 
-  // update in iterator
-  const newdb::ReadOptions options;
-  newdb::Iterator *it = db_->NewIterator(options);
-  it->SeekToFirst();
+  //   std::string gval;
+  //   db_->Get(newdb::ReadOptions(), rkey, &gval);
+  //   printf("key %s, value %s\n", rkey.data(), gval.c_str());
+  // }
+  // printf("finished load records\n");
 
-  int newv = TOTAL_RECORDS;
-  while (it->Valid()) {
-    newdb::Slice key = it->key();
-    newdb::Slice val = it->value();
+  // // update in iterator
+  // const newdb::ReadOptions options;
+  // newdb::Iterator *it = db_->NewIterator(options);
+  // it->SeekToFirst();
 
-    char newval[128] = {0};
-    sprintf(newval, "value%ld", newv++);
-    newdb::Slice rval(newval, 128);
-    db_->Put(newdb::WriteOptions(), key, rval);
-    it->Next();
-  }
-  printf("finished update records through iterator\n");
-  delete it;
+  // int newv = TOTAL_RECORDS;
+  // while (it->Valid()) {
+  //   newdb::Slice key = it->key();
+  //   newdb::Slice val = it->value();
+
+  //   char newval[128] = {0};
+  //   sprintf(newval, "value%ld", newv++);
+  //   newdb::Slice rval(newval, 128);
+  //   db_->Put(newdb::WriteOptions(), key, rval);
+  //   it->Next();
+  // }
+  // printf("finished update records through iterator\n");
+  // delete it;
 
 
 
-  // db_->flushVLog();
+  // // db_->flushVLog();
 
-  it = db_->NewIterator(options);
-  it->SeekToFirst();
-  while (it->Valid()) {
-    newdb::Slice key = it->key();
-    newdb::Slice val = it->value();
-    printf("key %s, value %s\n", key.data(), val.data());
-    it->Next();
-  }
+  // it = db_->NewIterator(options);
+  // it->SeekToFirst();
+  // while (it->Valid()) {
+  //   newdb::Slice key = it->key();
+  //   newdb::Slice val = it->value();
+  //   printf("key %s, value %s\n", key.data(), val.data());
+  //   it->Next();
+  // }
   return 0;
 }

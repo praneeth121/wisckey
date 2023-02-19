@@ -85,6 +85,7 @@ private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
   uint64_t sequence_;
   std::mutex seq_mutex_;
+  vector<uint64_t> phy_keys_for_gc_list;
 
   uint64_t get_new_seq() {
     uint64_t seq;

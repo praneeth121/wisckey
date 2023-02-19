@@ -62,14 +62,39 @@ DBImpl::~DBImpl() {
   threadpool_destroy(pool_, 1);
   sem_destroy(&q_sem_);
 
-  // if (dbstats_)
-  //   fprintf(stdout, "STATISTICS:\n%s\n", dbstats_->ToString().c_str());
 }
 
 Status DBImpl::Put(const WriteOptions &options, const Slice &key,
                    const Slice &value) {
 
   RecordTick(options_.statistics.get(), REQ_PUT);
+
+  // get existing physical key for gc
+  // performance is not affected drastically because the keydb is mostly on MainMemory/ NoDiskFlush
+  // so adjust the sst table value so that there is no flush triggered
+
+  /** READ FROM KEY_DB TO GET PHYSICAL **/
+  rocksdb::Slice gc_lkey(key.data(), key.size());
+  std::string gc_pkey_str;
+  rocksdb::Status s = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+
+  if (s.IsNotFound()) {
+    RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
+    return Status().NotFound(Slice());
+  }
+
+  int ri_retry_cnt = 0;
+  while (!(s.ok())) { // read index retry, rare
+    usleep(100);
+    s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
+    if (ri_retry_cnt++ >= 3)
+      break;
+  }
+
+  if (s.ok() && !s.IsNotFound())
+    phy_keys_for_gc_list.append(*(uint64_t*)gc_pkey_str.data());
+  /** COLLECTED THE METADATA INFORMATION NEEDED FOR GC **/
+
   // write phy-log key mapping in db
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
@@ -79,7 +104,7 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   rocksdb::Slice pkey(pkey_str, sizeof(uint64_t));
 
   rocksdb::WriteOptions write_options;
-  rocksdb::Status s = keydb_->Put(write_options, lkey, pkey);
+  s = keydb_->Put(write_options, lkey, pkey);
   int wi_retry_cnt = 0;
   while (!s.ok()) {
     fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
@@ -236,8 +261,25 @@ void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
     // implement this
 };
 
+std::vector<std::string>& DBImpl::sstFileInformation() {
+
+    rocksdb::ColumnFamilyMetaData cf_meta;
+    valuedb_->GetColumnFamilyMetaData(&cf_meta);
+
+    std::vector<std::string> input_file_names;
+    for (auto level : cf_meta.levels) {
+      for (auto file : level.files) {
+        if (file.being_compacted) {
+          return nullptr;
+        }
+        input_file_names.push_back(file.name);
+      }
+    }
+    return input_file_names;
+};
+
 void DBImpl::vLogGarbageCollect(){
-    // TODO
+    
 };
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
   return NewDBIterator(this, options);

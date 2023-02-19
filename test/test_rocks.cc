@@ -14,70 +14,91 @@
 int main() {
   rocksdb::DB *rdb_;
 
-  rocksdb::Options rocksOptions;
-  rocksOptions.IncreaseParallelism();
-  // rocksOptions.OptimizeLevelStyleCompaction();
-  rocksOptions.create_if_missing = true;
-  rocksOptions.max_open_files = 1000;
-  rocksOptions.compression = rocksdb::kNoCompression;
-  rocksOptions.paranoid_checks = false;
-  rocksOptions.allow_mmap_reads = false;
-  rocksOptions.allow_mmap_writes = false;
-  rocksOptions.use_direct_io_for_flush_and_compaction = true;
-  rocksOptions.use_direct_reads = true;
-  rocksOptions.write_buffer_size = 2 << 20;
-  rocksOptions.target_file_size_base = 2 * 1048576;
-  rocksOptions.max_bytes_for_level_base = 2 * 1048576;
+  rocksdb::Options valuedbOptions;
+  valuedbOptions.IncreaseParallelism();
+  valuedbOptions.create_if_missing = true;
+  valuedbOptions.max_open_files = -1;
+  valuedbOptions.compression = rocksdb::kNoCompression;
+  valuedbOptions.paranoid_checks = false;
+  valuedbOptions.allow_mmap_reads = false;
+  valuedbOptions.allow_mmap_writes = false;
+  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
+  valuedbOptions.use_direct_reads = true;
+  valuedbOptions.write_buffer_size = 64 << 20;
+  valuedbOptions.target_file_size_base = 64 * 1048576;
+  valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
+  // options_.valuedbOptions = valuedbOptions;
 
   // apply db options
   rocksdb::Status status =
-      rocksdb::DB::Open(rocksOptions, "test_rocksdb", &rdb_);
+      rocksdb::DB::Open(valuedbOptions, "../../newdb/valuedb", &rdb_);
   if (status.ok())
     printf("rocksdb open ok\n");
   else
     printf("rocksdb open error\n");
+  
+  rocksdb::ColumnFamilyMetaData cf_meta;
+  rdb_->GetColumnFamilyMetaData(&cf_meta);
 
+  std::vector<std::string> input_file_names;
+  int level_number = 0;
+  for (auto level : cf_meta.levels) {
+    printf("level %d: files:", level_number);
+    for (auto file : level.files) {
+      uint64_t smallest_key = *((uint*)file.smallestkey.data());
+      uint64_t largest_key = *((uint*)file.largestkey.data());
+      printf("file %s: smallest: %ld largest: %d\n", file.name.data(), smallest_key, largest_key);
+      input_file_names.push_back(file.name);
+    }
+    level_number++;
+  }
+
+
+
+  // std::string stats;
+  // rdb_->GetProperty("rocksdb.stats", &stats);
+  // printf("compaction_stats: %s\n", stats.data());
   // write some records
-  for (int i = 0; i < TOTAL_RECORDS; i++) {
-    char key[16] = {0};
-    char val[128] = {0};
-    sprintf(key, "%0*ld", 16 - 1, i);
-    sprintf(val, "value%ld", i);
-    rocksdb::Slice rkey(key, 16);
-    rocksdb::Slice rval(val, 128);
+  // for (int i = 0; i < TOTAL_RECORDS; i++) {
+  //   char key[16] = {0};
+  //   char val[128] = {0};
+  //   sprintf(key, "%0*ld", 16 - 1, i);
+  //   sprintf(val, "value%ld", i);
+  //   rocksdb::Slice rkey(key, 16);
+  //   rocksdb::Slice rval(val, 128);
 
-    rdb_->Put(rocksdb::WriteOptions(), rkey, rval);
-  }
-  printf("finished load records\n");
+  //   rdb_->Put(rocksdb::WriteOptions(), rkey, rval);
+  // }
+  // printf("finished load records\n");
 
-  // update in iterator
-  const rocksdb::ReadOptions options;
-  rocksdb::Iterator *it = rdb_->NewIterator(options);
-  it->SeekToFirst();
+  // // update in iterator
+  // const rocksdb::ReadOptions options;
+  // rocksdb::Iterator *it = rdb_->NewIterator(options);
+  // it->SeekToFirst();
 
-  int newv = TOTAL_RECORDS;
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
+  // int newv = TOTAL_RECORDS;
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
 
-    char newval[128] = {0};
-    sprintf(newval, "value%ld", newv++);
-    rocksdb::Slice rval(newval, 128);
-    rdb_->Put(rocksdb::WriteOptions(), key, rval);
-    it->Next();
-  }
-  printf("finished update records through iterator\n");
-  delete it;
+  //   char newval[128] = {0};
+  //   sprintf(newval, "value%ld", newv++);
+  //   rocksdb::Slice rval(newval, 128);
+  //   rdb_->Put(rocksdb::WriteOptions(), key, rval);
+  //   it->Next();
+  // }
+  // printf("finished update records through iterator\n");
+  // delete it;
 
-  // read back updated value
-  it = rdb_->NewIterator(options);
-  it->SeekToFirst();
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %s, value %s\n", key.data(), val.data());
-    it->Next();
-  }
+  // // read back updated value
+  // it = rdb_->NewIterator(options);
+  // it->SeekToFirst();
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
+  //   printf("key %s, value %s\n", key.data(), val.data());
+  //   it->Next();
+  // }
 
   return 0;
 }
