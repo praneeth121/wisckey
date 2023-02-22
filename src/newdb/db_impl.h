@@ -76,16 +76,18 @@ public:
 private:
   Options options_;
   std::string dbname_;
+  std::mutex gc_keys_mutex;
   // rocksdb for key-offset
 public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
+  // GC* gc_obj;
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
   uint64_t sequence_;
   std::mutex seq_mutex_;
-  vector<uint64_t> phy_keys_for_gc_list;
+  std::vector<uint64_t> phy_keys_for_gc;
 
   uint64_t get_new_seq() {
     uint64_t seq;
@@ -112,6 +114,22 @@ private:
   std::atomic<int64_t> inflight_io_count_;
 };
 
+class GCMetadata {
+public:
+  rocksdb::SstFileMetaData sstmeta;
+  bool ready_for_gc;
+  int level;
+  std::vector<uint64_t>::iterator smallest_itr;
+  std::vector<uint64_t>::iterator largest_itr;
+};
+
+// class GC {
+//   public:
+
+//   GC() {
+
+//   }
+// }
 } // namespace newdb
 
 #endif
