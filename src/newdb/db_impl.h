@@ -72,6 +72,7 @@ public:
   Status Get(const ReadOptions &options, const Slice &key, std::string *value);
   Iterator *NewIterator(const ReadOptions &);
   void vLogGarbageCollect();
+  void vLogGCWorker(void* args);
 
 private:
   Options options_;
@@ -107,17 +108,12 @@ private:
   uint64_t get_curr_seq() { return sequence_; }
 
   void flushVLog();
-  void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
-                    std::vector<std::string> *vmeta_list, int idx, int size,
-                    int *oldLogFD, int *newLogFD);
+  // void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
+  //                   std::vector<std::string> *vmeta_list, int idx, int size,
+  //                   int *oldLogFD, int *newLogFD);
   // rocksdb::DB* get_keydb() { return keydb_;};
   // rocksdb::DB* get_valuedb() { return valuedb_;};
 
-  // thread pool
-  threadpool_t *pool_;
-  sem_t q_sem_;
-  // I/O request conter (read only for now)
-  std::atomic<int64_t> inflight_io_count_;
 };
 
 class GCMetadata {
@@ -128,7 +124,13 @@ public:
   std::vector<uint64_t>::iterator smallest_itr;
   std::vector<uint64_t>::iterator largest_itr;
 };
+/** custom comparator **/
 
+ 
+struct GCCollectedKeys {
+  std::vector<uint64_t>::iterator smallest_itr;
+  std::vector<uint64_t>::iterator largest_itr; 
+};
 // class GC {
 //   public:
 

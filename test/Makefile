@@ -2,7 +2,7 @@
 
 CC=g++
 INCLUDES=-I../include
-LIBS=-L../libs -pthread -lwisckey -lrocksdb -lnewdb -std=c++11
+LIBS=-L../libs -pthread -lrocksdb -lnewdb -std=c++11
 CXXFLAG=-O2 -fPIC -w -march=native
 CXXFLAG_DBG=-O0 -fPIC -w -march=native -g 
 

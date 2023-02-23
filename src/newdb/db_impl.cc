@@ -281,13 +281,6 @@ void DBImpl::flushVLog() {
   }
 }
 
-void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
-                          std::vector<std::string> *vmeta_list, int idx,
-                          int size, int *oldLogFD, int *newLogFD){
-    // implement this
-};
-
-/** custom comparator **/
 bool cust_comparator_for_sstfiles(GCMetadata &a, GCMetadata &b) {
   if ((*((uint64_t *)a.sstmeta.smallestkey.data())) <
       (*((uint64_t *)b.sstmeta.smallestkey.data())))
@@ -295,13 +288,15 @@ bool cust_comparator_for_sstfiles(GCMetadata &a, GCMetadata &b) {
   return false;
 }
 
-void DBImpl::vLogGarbageCollect() {
-
+void DBImpl::vLogGCWorker(void* args){
   /**
   this is nlogn algorithm to sort physical keys (Should be optimised) and
   apply binary search to get number of elements in the region are garbage
   adding lock to protect the vector from being modified using PUT method
   **/
+  std::string stats;
+  valuedb_->GetProperty("rocksdb.stats", &stats);
+  printf("stats: %s\n", stats.c_str());
   std::vector<uint64_t>::iterator gc_keys_start, gc_keys_end;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
@@ -312,6 +307,10 @@ void DBImpl::vLogGarbageCollect() {
 // #ifdef DEBUG
   printf("vLogGarbageCollect: GC Keys");
   for (auto it = gc_keys_start; it != gc_keys_end; ++it) {
+    printf("%ld ", *it);
+  }
+  printf("\n");
+  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
     printf("%ld ", *it);
   }
   printf("\n");
@@ -355,16 +354,19 @@ void DBImpl::vLogGarbageCollect() {
     }
   }
 
-  std::sort(input_files.begin(), input_files.end(),
-            cust_comparator_for_sstfiles);
+  std::sort(input_files.begin(), input_files.end(),cust_comparator_for_sstfiles);
   for (auto it = input_files.begin(); it != input_files.end(); ++it) {
     printf("file start %ld and end: %ld\n",
            *((uint64_t *)it->sstmeta.smallestkey.data()),
            *((uint64_t *)it->sstmeta.largestkey.data()));
   }
+  std::vector<GCCollectedKeys> deletion_keys;
+
   int file_idx = 0;
   std::vector<std::string> compaction_files;
   std::set<uint64_t> gc_keys_set;
+  std::vector<GCCollectedKeys> deletion_keys_tmp;
+  GCCollectedKeys gc_collected_keys_obj;
   int next_lvl = 0;
   auto *compaction_filter_factory =
       reinterpret_cast<NewDbCompactionFilterFactory *>(
@@ -372,12 +374,16 @@ void DBImpl::vLogGarbageCollect() {
   while (file_idx < input_files.size()) {
     if (input_files[file_idx].ready_for_gc) {
       // can be optimised using vector iterator technique
+      gc_collected_keys_obj.smallest_itr = input_files[file_idx].smallest_itr;
+      gc_collected_keys_obj.largest_itr = input_files[file_idx].largest_itr;
+      deletion_keys_tmp.push_back(gc_collected_keys_obj);
       gc_keys_set.insert(input_files[file_idx].smallest_itr,
                          input_files[file_idx].largest_itr);
       compaction_files.push_back(input_files[file_idx].sstmeta.name);
       next_lvl = std::max(next_lvl, input_files[file_idx].level + 1);
     } else {
       if (compaction_files.size() > 1) {
+        deletion_keys.insert(deletion_keys.end(), deletion_keys_tmp.begin(), deletion_keys_tmp.end());
         printf("running a garbage collection on %d files\n",
                compaction_files.size());
         for(int i = 0;i < compaction_files.size();i++) {
@@ -385,8 +391,9 @@ void DBImpl::vLogGarbageCollect() {
         }
         printf("\n");
         compaction_filter_factory->set_garbage_keys(&gc_keys_set);
+        
         valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
-                               next_lvl);
+                               next_lvl);               
         rocksdb::ReadOptions rdopts;
         rocksdb::Iterator *it = valuedb_->NewIterator(rdopts);
         it = valuedb_->NewIterator(rdopts);
@@ -402,9 +409,47 @@ void DBImpl::vLogGarbageCollect() {
       next_lvl = 0;
       compaction_files.clear();
       gc_keys_set.clear();
+      deletion_keys_tmp.clear();
     }
     file_idx++;
   }
+
+  // cleaning the gc_keys
+  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+    printf("%ld ", *it);
+  }
+  printf("\n");
+  // deleting from the reverse order
+  printf("size: %ld\n", deletion_keys.size());
+  for(int i = deletion_keys.size()-1;i >= 0;i--) {
+    phy_keys_for_gc.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
+  }
+  
+  //
+  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+    printf("%ld ", *it);
+  }
+  printf("\n");
+
+  valuedb_->GetProperty("rocksdb.stats", &stats);
+  printf("stats: %s\n", stats.c_str());
+
+
+
+};
+
+
+
+
+void DBImpl::vLogGarbageCollect() {
+  // sem_wait(&(q_sem_));
+  // void* args;
+  // if (threadpool_add(pool_, &vLogGCWorker, args, 0) < 0) {
+  //   printf("async_pread pool_add error, fd %d, offset %llu\n");
+  //   exit(1);
+  // }
+  void* args;
+  vLogGCWorker(args);
 };
 
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
