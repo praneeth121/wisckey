@@ -64,6 +64,11 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     printf("rocksdb open error: %s\n", status_str.c_str());
     exit(-1);
   }
+
+  // start thread pool for async i/o
+  pool_ = threadpool_create(options.threadPoolThreadsNum, options.threadPoolQueueDepth, 0, &q_sem_);
+  sem_init(&q_sem_, 0, options.threadPoolQueueDepth-1);
+
 }
 
 DBImpl::~DBImpl() {
@@ -304,12 +309,13 @@ void DBImpl::vLogGarbageCollect() {
     gc_keys_start = phy_keys_for_gc.begin();
     gc_keys_end = phy_keys_for_gc.end();
   }
-#ifdef DEBUG
+// #ifdef DEBUG
   printf("vLogGarbageCollect: GC Keys");
   for (auto it = gc_keys_start; it != gc_keys_end; ++it) {
-    printf("key: %ld\n", *it);
+    printf("%ld ", *it);
   }
-#endif
+  printf("\n");
+// #endif
 
   rocksdb::ColumnFamilyMetaData cf_meta;
   valuedb_->GetColumnFamilyMetaData(&cf_meta);
@@ -337,7 +343,7 @@ void DBImpl::vLogGarbageCollect() {
       gc_mt_obj.largest_itr = large_itr;
       if (file.being_compacted)
         gc_mt_obj.ready_for_gc = false;
-      else if (garbage_percent >= 40)
+      else if (garbage_percent >= 1)
         gc_mt_obj.ready_for_gc = true;
       else
         gc_mt_obj.ready_for_gc = false;
@@ -374,6 +380,10 @@ void DBImpl::vLogGarbageCollect() {
       if (compaction_files.size() > 1) {
         printf("running a garbage collection on %d files\n",
                compaction_files.size());
+        for(int i = 0;i < compaction_files.size();i++) {
+          printf("%s ", compaction_files[i].data());
+        }
+        printf("\n");
         compaction_filter_factory->set_garbage_keys(&gc_keys_set);
         valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
                                next_lvl);

@@ -78,6 +78,12 @@ private:
   std::string dbname_;
   std::mutex gc_keys_mutex;
   // rocksdb for key-offset
+  // thread pool
+  threadpool_t *pool_;
+  sem_t q_sem_;
+  // I/O request conter (read only for now)
+  std::atomic<int64_t> inflight_io_count_;
+  
 public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
