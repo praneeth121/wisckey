@@ -534,23 +534,38 @@ int main(int argc, char *argv[]) {
   }
   
 
-  rocksdb::Options rocksOptions;
-  rocksOptions.IncreaseParallelism();
-  // rocksOptions.OptimizeLevelStyleCompaction();
-  rocksOptions.create_if_missing = true;
-  rocksOptions.max_open_files = -1;
-  rocksOptions.compression = rocksdb::kNoCompression;
-  rocksOptions.paranoid_checks = false;
-  rocksOptions.allow_mmap_reads = false;
-  rocksOptions.allow_mmap_writes = false;
-  rocksOptions.use_direct_io_for_flush_and_compaction = true;
-  rocksOptions.use_direct_reads = true;
-  rocksOptions.write_buffer_size = 64 << 20;
-  rocksOptions.target_file_size_base = 64 * 1048576;
-  rocksOptions.max_bytes_for_level_base = 64 * 1048576;
+  // rocksdb::Options rocksOptions;
+  // rocksOptions.IncreaseParallelism();
+  // // rocksOptions.OptimizeLevelStyleCompaction();
+  // // rocksOptions.create_if_missing = true;
+  // // rocksOptions.max_open_files = -1;
+  // // rocksOptions.compression = rocksdb::kNoCompression;
+  // // rocksOptions.paranoid_checks = false;
+  // // rocksOptions.allow_mmap_reads = false;
+  // // rocksOptions.allow_mmap_writes = false;
+  // // rocksOptions.use_direct_io_for_flush_and_compaction = true;
+  // // rocksOptions.use_direct_reads = true;
+  // // rocksOptions.write_buffer_size = 64 << 20;
+  // // rocksOptions.target_file_size_base = 64 * 1048576;
+  // // rocksOptions.max_bytes_for_level_base = 64 * 1048576;
+  rocksdb::Options keydbOptions;
+  keydbOptions.IncreaseParallelism();
+  keydbOptions.create_if_missing = true;
+  keydbOptions.max_open_files = -1;
+  keydbOptions.compression = rocksdb::kNoCompression;
+  keydbOptions.paranoid_checks = false;
+  keydbOptions.allow_mmap_reads = false;
+  keydbOptions.allow_mmap_writes = false;
+  keydbOptions.use_direct_io_for_flush_and_compaction = true;
+  keydbOptions.use_direct_reads = true;
+  keydbOptions.write_buffer_size = 512 << 20;
+  keydbOptions.max_write_buffer_number = 5;
+  keydbOptions.min_write_buffer_number_to_merge = 3;
+  keydbOptions.target_file_size_base = 2 * 1024* 1048576;
+  keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
 
   rocksdb::DB *db = NULL;
-  rocksdb::DB::Open(rocksOptions, dev_path, &db);
+  rocksdb::DB::Open(keydbOptions, dev_path, &db);
 
   thread_args args[t];
   pthread_t tid[t];

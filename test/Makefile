@@ -23,5 +23,8 @@ rocks_perf:
 newdb_perf:
 	$(CC) newdb_perf.cc -o newdb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 
+wisckeydb_perf:
+	$(CC) wisckeydb_perf.cc -o wisckeydb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
+
 clean:
 	rm -rf test_rocks test_wisc

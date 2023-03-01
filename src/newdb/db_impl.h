@@ -80,11 +80,15 @@ private:
 public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
+  
+  
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
   uint64_t sequence_;
   std::mutex seq_mutex_;
+  std::vector<uint64_t> phy_keys_for_gc;
+  std::mutex gc_keys_mutex;
 
   uint64_t get_new_seq() {
     uint64_t seq;

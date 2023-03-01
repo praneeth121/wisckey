@@ -267,7 +267,7 @@ int perform_read(int id, newdb::DB *db, int count, uint8_t klen, uint32_t vlen, 
       fprintf(stderr, "retrieve tuple %s (%d) failed with error\n", std::string(key, klen).c_str(), seed+start_key);
       //exit(1);
     } else {
-      //fprintf(stdout, "retrieve tuple %s with value = %s, vlen = %d \n", key, std::string(val.data(), 8).c_str(), val.size());
+      fprintf(stdout, "retrieve tuple %s with value = %s, vlen = %d \n", key, std::string(val.data(), 8).c_str(), val.size());
     }
 
     if (i%ACCUM_GRANU == (ACCUM_GRANU-1)) {
@@ -535,11 +535,15 @@ int main(int argc, char *argv[]) {
   keydbOptions.allow_mmap_writes = false;
   keydbOptions.use_direct_io_for_flush_and_compaction = true;
   keydbOptions.use_direct_reads = true;
-  keydbOptions.write_buffer_size = 64 << 20;
-  keydbOptions.target_file_size_base = 64 * 1048576;
-  keydbOptions.max_bytes_for_level_base = 64 * 1048576;
+  keydbOptions.write_buffer_size = 512 << 20;
+  keydbOptions.max_write_buffer_number = 5;
+  keydbOptions.min_write_buffer_number_to_merge = 3;
+  keydbOptions.target_file_size_base = 2 * 1024* 1048576;
+  keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
+//  keydbOptions.allow_concurrent_memtable_write = false;
+//  keydbOptions.memtable_factory.reset(rocksdb::NewHashSkipListRepFactory(100000,  2 * 1024 * 1024));
   options.keydbOptions = keydbOptions;
-
+  
   rocksdb::Options valuedbOptions;
   valuedbOptions.IncreaseParallelism();
   valuedbOptions.create_if_missing = true;
@@ -553,6 +557,7 @@ int main(int argc, char *argv[]) {
   valuedbOptions.write_buffer_size = 64 << 20;
   valuedbOptions.target_file_size_base = 64 * 1048576;
   valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
+  valuedbOptions.stats_dump_period_sec = 10;
   options.valuedbOptions = valuedbOptions;
 
   options.statistics = newdb::Options::CreateDBStatistics();
@@ -560,10 +565,6 @@ int main(int argc, char *argv[]) {
   newdb::DB *db = NULL;
   newdb::DB::Open(options, dev_path, &db);
   
-  // debug code
-  // db->flushVLog();
-  // delete db;
-  // endcode
 
   thread_args args[t];
   pthread_t tid[t];

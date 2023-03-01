@@ -13,6 +13,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 
 namespace newdb {
 
@@ -69,7 +70,35 @@ DBImpl::~DBImpl() {
 Status DBImpl::Put(const WriteOptions &options, const Slice &key,
                    const Slice &value) {
 
+
   RecordTick(options_.statistics.get(), REQ_PUT);
+
+  /** READ FROM KEY_DB TO GET PHYSICAL **/
+  // TODO: Can implement a bloom filter
+  // Add User Defined update and insert mode
+//   rocksdb::Slice gc_lkey(key.data(), key.size());
+//   std::string gc_pkey_str;
+//   rocksdb::Status s_gc =
+//       keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+
+//   int ri_retry_cnt = 0;
+//   while (!(s_gc.ok())) { // read index retry, rare
+//     usleep(100);
+//     s_gc = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+//     if (ri_retry_cnt++ >= 3)
+//       break;
+//   }
+
+//  if (s_gc.ok()) {
+//     // TODO: Dynamic memory limitations
+//     {
+//       std::unique_lock<std::mutex> lock(gc_keys_mutex);
+//       printf("obsolete keys size: %ld\n", phy_keys_for_gc.size());
+//       if (gc_pkey_str.size() != 0)
+//         phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+//     }
+//   }
+
   // write phy-log key mapping in db
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
@@ -120,6 +149,27 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 Status DBImpl::Delete(const WriteOptions &options, const Slice &key) {
 
   RecordTick(options_.statistics.get(), REQ_DEL);
+  rocksdb::Slice gc_lkey(key.data(), key.size());
+  std::string gc_pkey_str;
+  rocksdb::Status s_gc =
+      keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+  int ri_retry_cnt = 0;
+  while (!(s_gc.ok())) { // read index retry, rare
+    usleep(100);
+    s_gc = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+    if (ri_retry_cnt++ >= 3)
+      break;
+  }
+
+ if (s_gc.ok()) {
+    // TODO: Dynamic memory limitations
+    {
+      std::unique_lock<std::mutex> lock(gc_keys_mutex);
+      printf("obsolete keys size: %ld\n", phy_keys_for_gc.size());
+      if (gc_pkey_str.size() != 0)
+        phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+    }
+  }  
 
   rocksdb::WriteOptions write_options;
   rocksdb::Slice rocks_key(key.data(), key.size());
@@ -238,6 +288,7 @@ void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
 
 void DBImpl::vLogGarbageCollect(){
     // TODO
+    // valuedb.statistics.get().reportStats();
 };
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
   return NewDBIterator(this, options);

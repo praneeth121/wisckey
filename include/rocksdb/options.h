@@ -1165,7 +1165,7 @@ struct CompactRangeOptions {
   // By default level based compaction will only compact the bottommost level
   // if there is a compaction filter
   BottommostLevelCompaction bottommost_level_compaction =
-      BottommostLevelCompaction::kIfHaveCompactionFilter;
+      BottommostLevelCompaction::kSkip;
 };
 
 // IngestExternalFileOptions is used by IngestExternalFile()

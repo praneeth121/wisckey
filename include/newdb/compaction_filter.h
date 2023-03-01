@@ -4,12 +4,13 @@
 
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/slice.h"
+#include <set>
 // #define DEBUG
 namespace newdb {
 
 class NewDbCompactionFilter : public rocksdb::CompactionFilter {
 public:
-  explicit NewDbCompactionFilter(rocksdb::DB *keydb) : keydb_(keydb){};
+  explicit NewDbCompactionFilter(rocksdb::DB *keydb, std::set<uint64_t> *phy_keys_for_gc_list) : keydb_(keydb),garbage_keys_(phy_keys_for_gc_list){};
   static const char *kClassName() { return "NewDbCompactionFilter"; }
   const char *Name() const override { return kClassName(); }
 
@@ -21,6 +22,7 @@ public:
 
 private:
   rocksdb::DB *keydb_;
+  std::set<uint64_t>* garbage_keys_;
 };
 
 class NewDbCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
@@ -32,9 +34,12 @@ public:
       const rocksdb::CompactionFilter::Context &context) override;
   static const char *kClassName() { return "NewDbCompactionFilterFactory"; }
   const char *Name() const override { return kClassName(); }
-
+  void set_garbage_keys(std::set<uint64_t>* garbage_keys) {
+    garbage_keys_ = garbage_keys;
+  }
 private:
   rocksdb::DB *keydb_;
+  std::set<uint64_t>* garbage_keys_;
 };
 
 rocksdb::CompactionFilter::Decision
@@ -44,41 +49,29 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
                                 std::string * /*new_value*/,
                                 std::string * /*skip_until*/) const {
 
-  fprintf(stdout, "compaction filter is called\n");
-  const char *ptr = existing_value.data();
-  int key_len = *((uint8_t *)ptr);
-  ptr += sizeof(uint8_t);
-
-  std::string lkey_str(ptr, key_len);
-  rocksdb::Slice lkey(lkey_str.data(), key_len);
-  std::string pkey;
-
-  rocksdb::Status s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey);
-  if (s.IsNotFound()) {
-#ifdef DEBUG
-    printf("%s key not found\n", lkey.data());
-#endif
+  if(garbage_keys_ == NULL) 
+    return rocksdb::CompactionFilter::Decision::kKeep;
+  auto it = garbage_keys_->find(*(uint64_t*)key.data());
+  if (it != garbage_keys_->end()) {
+    printf("%ld is a garbage key\n", (*(uint64_t *)key.data()));
     return rocksdb::CompactionFilter::Decision::kRemove;
   }
-  if (key.ToString() != pkey) {
-#ifdef DEBUG
-    printf("%ld key did not match %ld\n", (*(uint64_t *)key.data()),
-           (*(uint64_t *)pkey.data()));
-#endif
-    return rocksdb::CompactionFilter::Decision::kRemove;
-  }
-#ifdef DEBUG
-  printf("%ld key match %ld\n", (*(uint64_t *)key.data()),
-         (*(uint64_t *)pkey.data()));
-#endif
   return rocksdb::CompactionFilter::Decision::kKeep;
 };
 
 std::unique_ptr<rocksdb::CompactionFilter>
 NewDbCompactionFilterFactory::CreateCompactionFilter(
-    const rocksdb::CompactionFilter::Context & /*context*/) {
-  return std::unique_ptr<rocksdb::CompactionFilter>(
-      new NewDbCompactionFilter(keydb_));
+    const rocksdb::CompactionFilter::Context & context) {
+ if(context.is_manual_compaction) {
+    printf("called an manual compaction\n");
+    return std::unique_ptr<rocksdb::CompactionFilter>(
+        new NewDbCompactionFilter(keydb_, garbage_keys_));
+ }
+  else {
+    printf("called an automatic compaction, this should not have happend at all\n");
+    return std::unique_ptr<rocksdb::CompactionFilter>(
+          new NewDbCompactionFilter(keydb_, NULL));
+  }
 }
 
 } // namespace newdb
