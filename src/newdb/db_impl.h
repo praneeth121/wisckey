@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include "newdb/db.h"
+#include "newdb/mapping_table.h"
 #include <mutex>
 #include <stdint.h>
 #include <stdio.h>
@@ -78,10 +79,8 @@ private:
   std::string dbname_;
   // rocksdb for key-offset
 public:
-  rocksdb::DB *keydb_;
+  Map *key_map_;
   rocksdb::DB *valuedb_;
-  
-  
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;

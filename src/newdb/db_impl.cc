@@ -9,11 +9,11 @@
 #include "newdb/db.h"
 #include "newdb/iterator.h"
 #include "rocksdb/convenience.h"
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <mutex>
 #include <thread>
-#include <algorithm>
 
 namespace newdb {
 
@@ -21,27 +21,19 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
       dbstats_(nullptr), sequence_(0) {
 
-
   // start thread pool for async i/o
   pool_ = threadpool_create(options.threadPoolThreadsNum,
                             options.threadPoolQueueDepth, 0, &q_sem_);
   sem_init(&q_sem_, 0, options.threadPoolQueueDepth - 1);
 
+  // create key_map
+  key_map_ = NewMemMap();
   // apply db options
-  rocksdb::Status status =
-      rocksdb::DB::Open(options.keydbOptions, dbname + "keydb", &keydb_);
-  if (status.ok())
-    printf("rocksdb open ok\n");
-  else {
-    std::string status_str = status.ToString();
-    printf("rocksdb open error: %s\n", status_str.c_str());
-    exit(-1);
-  }
   rocksdb::Options valuedbOptions = options.valuedbOptions;
-  valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
 
-  status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
+  rocksdb::Status status =
+      rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
   if (status.ok())
     printf("rocksdb open ok\n");
   else {
@@ -54,68 +46,40 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
 DBImpl::~DBImpl() {
 
   // delete databases
-  rocksdb::CancelAllBackgroundWork(keydb_, true);
   rocksdb::CancelAllBackgroundWork(valuedb_, true);
-  delete keydb_;
   delete valuedb_;
+  delete key_map_;
 
   // thread pool
   threadpool_destroy(pool_, 1);
   sem_destroy(&q_sem_);
-
-  // if (dbstats_)
-  //   fprintf(stdout, "STATISTICS:\n%s\n", dbstats_->ToString().c_str());
 }
 
 Status DBImpl::Put(const WriteOptions &options, const Slice &key,
                    const Slice &value) {
 
-
   RecordTick(options_.statistics.get(), REQ_PUT);
 
-  /** READ FROM KEY_DB TO GET PHYSICAL **/
-  // TODO: Can implement a bloom filter
-  // Add User Defined update and insert mode
-//   rocksdb::Slice gc_lkey(key.data(), key.size());
-//   std::string gc_pkey_str;
-//   rocksdb::Status s_gc =
-//       keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+  // insert (log_key, phy_key) into mapping table
+  // collect the garbage
+  uint64_t seq = get_new_seq();
+  phy_key oKey;
+  phy_key nKey(seq);
 
-//   int ri_retry_cnt = 0;
-//   while (!(s_gc.ok())) { // read index retry, rare
-//     usleep(100);
-//     s_gc = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-//     if (ri_retry_cnt++ >= 3)
-//       break;
-//   }
+  std::string log_key = key.ToString();
 
-//  if (s_gc.ok()) {
-//     // TODO: Dynamic memory limitations
-//     {
-//       std::unique_lock<std::mutex> lock(gc_keys_mutex);
-//       printf("obsolete keys size: %ld\n", phy_keys_for_gc.size());
-//       if (gc_pkey_str.size() != 0)
-//         phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
-//     }
-//   }
+  bool modified = key_map_->readmodifywrite(&log_key, &oKey, &nKey);
+  if (modified) {
+    {
+      std::unique_lock<std::mutex> lock(gc_keys_mutex);
+      phy_keys_for_gc.push_back(oKey.phykey);
+    }
+  }
 
-  // write phy-log key mapping in db
-  rocksdb::Slice lkey(key.data(), key.size());
-  uint64_t seq;
-  seq = get_new_seq();
+  // prepare physical key
   char *pkey_str = (char *)malloc(sizeof(uint64_t));
   *((uint64_t *)pkey_str) = seq;
   rocksdb::Slice pkey(pkey_str, sizeof(uint64_t));
-
-  rocksdb::WriteOptions write_options;
-  rocksdb::Status s = keydb_->Put(write_options, lkey, pkey);
-  int wi_retry_cnt = 0;
-  while (!s.ok()) {
-    fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-    s = keydb_->Put(write_options, lkey, pkey);
-    if (wi_retry_cnt++ >= 3)
-      return Status().IOError(Slice());
-  }
 
   // prepare physical value
   int pval_size = sizeof(uint8_t) + key.size() + value.size();
@@ -126,18 +90,19 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   memcpy(pval_ptr, key.data(), key.size());
   pval_ptr += key.size();
   memcpy(pval_ptr, value.data(), value.size());
-
-  // write pkey-pval in db
   rocksdb::Slice pval(pval_str, pval_size);
-  s = valuedb_->Put(write_options, pkey, pval);
 
-  wi_retry_cnt = 0;
+  // insert into db
+  rocksdb::Status s = valuedb_->Put(rocksdb::WriteOptions(), pkey, pval);
+
+  int wi_retry_cnt = 0;
   while (!s.ok()) {
     fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-    s = valuedb_->Put(write_options, pkey, pval);
+    s = valuedb_->Put(rocksdb::WriteOptions(), pkey, pval);
     if (wi_retry_cnt++ >= 3)
       return Status().IOError(Slice());
   }
+
   assert(s.ok());
 
   free(pkey_str);
@@ -149,32 +114,17 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 Status DBImpl::Delete(const WriteOptions &options, const Slice &key) {
 
   RecordTick(options_.statistics.get(), REQ_DEL);
-  rocksdb::Slice gc_lkey(key.data(), key.size());
-  std::string gc_pkey_str;
-  rocksdb::Status s_gc =
-      keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-  int ri_retry_cnt = 0;
-  while (!(s_gc.ok())) { // read index retry, rare
-    usleep(100);
-    s_gc = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-    if (ri_retry_cnt++ >= 3)
-      break;
-  }
-
- if (s_gc.ok()) {
-    // TODO: Dynamic memory limitations
+  // This implementation has an issue with delete
+  std::string log_key = key.ToString();
+  phy_key pKey;
+  bool exists = key_map_->lookup(&log_key, &pKey);
+  if (exists) {
+    key_map_->erase(&log_key);
     {
       std::unique_lock<std::mutex> lock(gc_keys_mutex);
-      printf("obsolete keys size: %ld\n", phy_keys_for_gc.size());
-      if (gc_pkey_str.size() != 0)
-        phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+      phy_keys_for_gc.push_back(pKey.phykey);
     }
-  }  
-
-  rocksdb::WriteOptions write_options;
-  rocksdb::Slice rocks_key(key.data(), key.size());
-  rocksdb::Status s = keydb_->Delete(write_options, rocks_key);
-
+  }
   return Status();
 }
 
@@ -183,9 +133,22 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
   RecordTick(options_.statistics.get(), REQ_GET);
 
   // read from keydb
-  rocksdb::Slice lkey(key.data(), key.size());
-  std::string pkey_str;
-  rocksdb::Status s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
+  std::string log_key = key.ToString();
+  phy_key pKey;
+  bool found = key_map_->lookup(&log_key, &pKey);
+  if (!found) {
+    RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
+    return Status().NotFound(Slice());
+  }
+
+  // prepare physical key
+  char *pkey_str = (char *)malloc(sizeof(uint64_t));
+  *((uint64_t *)pkey_str) = pKey.phykey;
+
+  // Get Call
+  rocksdb::Slice pkey(pkey_str, sizeof(uint64_t));
+  std::string pval_str;
+  rocksdb::Status s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
 
   if (s.IsNotFound()) {
     RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
@@ -193,24 +156,6 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
   }
 
   int ri_retry_cnt = 0;
-  while (!(s.ok())) { // read index retry, rare
-    usleep(100);
-    s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
-    if (ri_retry_cnt++ >= 3)
-      return Status().NotFound(Slice());
-  }
-
-  // read from valuedb
-  rocksdb::Slice pkey(pkey_str.data(), pkey_str.size());
-  std::string pval_str;
-  s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
-
-  if (s.IsNotFound()) {
-    RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
-    return Status().NotFound(Slice());
-  }
-
-  ri_retry_cnt = 0;
   while (!(s.ok())) { // read index retry, rare
     usleep(100);
     s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
@@ -227,57 +172,24 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
 }
 
 void DBImpl::flushVLog() {
-  // implement this
-  // iterator
-  rocksdb::ReadOptions rdopts;
-  rocksdb::Iterator *it = keydb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("key iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
-    it->Next();
-  }
+  // auto it_ = key_map_->NewMapIterator();
+  // printf("flushVlog: Key Iterator");
+  // it_->SeekToFirst();
+  // while(it_->Valid()) {
+  //   std::string key = it_->Key();
+  //   std::string val = it_->Value();
+  //   printf("%s -> %ld\n", key.data(), *((uint64_t*)val.data()));
+  //   it_->Next();
+  // }
 
-  it = valuedb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("value iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
-    it->Next();
-  }
-  std::string stats;
-  valuedb_->GetProperty("rocksdb.stats", &stats);
-  printf("stats: %s\n", stats.c_str());
-  printf("compaction started\n");
-  stats = "";
-  valuedb_->CompactRange(rocksdb::CompactRangeOptions(), nullptr, nullptr);
-  valuedb_->GetProperty("rocksdb.stats", &stats);
-  printf("stats: %s\n", stats.c_str());
-  printf("compaction done\n");
-
-  it = keydb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("key iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
-    it->Next();
-  }
-
-  it = valuedb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("value iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
-    it->Next();
-  }
+  // rocksdb::Iterator* it_1 = valuedb_->NewIterator(rocksdb::ReadOptions());
+  // it_1->SeekToFirst();
+  // while (it_1->Valid()) {
+  //   rocksdb::Slice key = it_1->key();
+  //   rocksdb::Slice val = it_1->value();
+  //   printf("key %ld, value %s\n", *(uint64_t*)key.data(), val.data());
+  //   it_1->Next();
+  // }
 }
 
 void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
@@ -290,6 +202,7 @@ void DBImpl::vLogGarbageCollect(){
     // TODO
     // valuedb.statistics.get().reportStats();
 };
+
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
   return NewDBIterator(this, options);
 }

@@ -90,7 +90,6 @@ public:
     bool exist;
     std::lock_guard<std::mutex> guard(lock_);
     auto it = key_map_.find(*key);
-    assert(it != key_map_.end());
     exist = (it != key_map_.end());
     if (exist) {
       *rd_val = it->second;
@@ -132,7 +131,7 @@ public:
     key_map_.erase(*key);
   }
 
-  MapIterator *NewMapIterator() { return NULL; }
+  MapIterator *NewMapIterator() { return new MemMapIterator(this); }
 };
 
 uint64_t MemMap::serializedSize() {
@@ -277,11 +276,11 @@ public:
       retry_cnt++;
       exist = key_map_.find(*key, *rd_val);
     }
-    assert(exist);
-    if (exist) {
+    if (!exist) {
+      key_map_.insert(*key, *wr_val);
+    } else {
       key_map_.update(*key, *wr_val);
     }
-
     return exist;
   }
 

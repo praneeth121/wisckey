@@ -95,7 +95,7 @@ private:
 
   const ReadOptions &options_;
   rocksdb::Slice s_upper_key_;
-  rocksdb::Iterator *it_;
+  MapIterator *it_;
   std::string value_;
   bool valid_;
 
@@ -165,7 +165,7 @@ DBIterator::DBIterator(DBImpl *db, const ReadOptions &options)
   }
 
   // not an optimal one currently
-  it_ = db_->keydb_->NewIterator(rdopts);
+  it_ = db_->key_map_->NewMapIterator();
 }
 
 DBIterator::~DBIterator() {
@@ -182,116 +182,53 @@ DBIterator::~DBIterator() {
 
 void DBIterator::SeekToFirst() {
   it_->SeekToFirst();
-  if (prefetch_ena_) {
-    valid_ = valid_queue_[0] = it_->Valid();
-    if (it_->Valid())
-      key_queue_[0] = it_->key().ToString();
-    pkey_queue_[0] = it_->value().ToString();
-  } else {
-    valid_ = it_->Valid();
-  }
+  valid_ = it_->Valid();
 }
 
 void DBIterator::Seek(const Slice &target) {
   RecordTick(db_->options_.statistics.get(), REQ_SEEK);
-  rocksdb::Slice rocks_target(target.data(), target.size());
-  // printf("seek key: %s\n", std::string(target.data(),
-  // target.size()).c_str());
-  // none phase
-  it_->Seek(rocks_target);
-  if (prefetch_ena_) {
-    valid_ = valid_queue_[0] = it_->Valid();
-    if (valid_) {
-      key_queue_[0] = it_->key().ToString();
-      pkey_queue_[0] = it_->value().ToString();
-    }
-    // implicit next for prefetch
-    assert(queue_cur_ == 0);
-
-    for (int i = 1; i < prefetch_depth_; i++) {
-      if (it_->Valid()) {
-        it_->Next();
-        if (it_->Valid()) {
-          key_queue_[i] = (it_->key()).ToString();
-          pkey_queue_[i] = (it_->value()).ToString();
-          valid_queue_[i] = true;
-        } else {
-          valid_queue_[i] = false;
-          break;
-        }
-      }
-    }
-  } else {
-    valid_ = it_->Valid();
-  }
+  std::string target_key = target.ToString();
+  it_->Seek(target_key);
+  valid_ = it_->Valid();
 }
 
 void DBIterator::Prev() { /* NOT FULLY IMPLEMENT, Suppose ONLY CALL BEFORE next
                            */
   assert(valid_);
-  // std::string curr_key = it_->key().ToString();
-
-  // do {
-  //   it_->Prev();
-  // } while (it_->Valid() && db_->options_.comparator->Compare(it_->key(),
-  // curr_key) >= 0); valid_ = it_->Valid();
 }
 
 void DBIterator::Next() {
   RecordTick(db_->options_.statistics.get(), REQ_NEXT);
-  if (prefetch_ena_) {
-    if (queue_cur_ == prefetch_depth_ - 1) {
-      queue_cur_ = 0; // reset cursor
-
-      // calculate prefetch depth
-      if (prefetch_depth_ < db_->options_.prefetchDepth) {
-        prefetch_depth_ = prefetch_depth_ == 0 ? 1 : prefetch_depth_ << 1;
-      }
-
-      for (int i = 0; i < prefetch_depth_; i++) {
-        it_->Next();
-        valid_ = it_->Valid();
-        if (valid_) {
-          key_queue_[i] = (it_->key()).ToString();
-          pkey_queue_[i] = (it_->value()).ToString();
-          valid_queue_[i] = true;
-        } else {
-          valid_queue_[i] = false;
-          break;
-        }
-      }
-    } else
-      queue_cur_++;
-
-    valid_ = valid_queue_[queue_cur_];
-  } else {
-    it_->Next();
-    valid_ = it_->Valid();
-  }
+  it_->Next();
+  valid_ = it_->Valid();
 }
 
 Slice DBIterator::key() const {
+  std::string log_key = it_->Key();
 
-  if (prefetch_ena_) {
-    return Slice(key_queue_[queue_cur_]);
-  } else {
-    rocksdb::Slice rocks_key = it_->key();
-    Slice it_key(rocks_key.data(), rocks_key.size());
-    return it_key;
-  }
+  char *ptr = (char *)malloc(log_key.size());
+  memcpy(ptr, log_key.data(), log_key.size());
+  Slice it_key(ptr, log_key.size());
+  return it_key;
 }
 
 Slice DBIterator::value() {
   assert(valid_);
-
   Slice curr_key = key();
   std::string pval;
-  Status s = db_->Get(ReadOptions(), curr_key, &pval);
-  // s value_
-  // value_.append(rocks_val.data(), rocks_val.size());
-  value_.clear();
-  value_.append(pval);
-  return Slice(pval);
+  std::string pKey = it_->Value();
+  rocksdb::Status s =
+      db_->valuedb_->Get(rocksdb::ReadOptions(), rocksdb::Slice(pKey), &pval);
+  const char *ptr = pval.data();
+  uint8_t key_len = *((uint8_t *)ptr);
+  ptr += sizeof(uint8_t);
+  ptr += key_len;
+  std::string value;
+  value.append(ptr);
+
+  char *v_ptr = (char *)malloc(value.size());
+  memcpy(v_ptr, value.data(), value.size());
+  return Slice(v_ptr, value.size());
 }
 
 Iterator *NewDBIterator(DBImpl *db, const ReadOptions &options) {

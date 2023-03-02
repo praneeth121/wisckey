@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 150000
+#define TOTAL_RECORDS 150
 
 int main() {
   newdb::DB *db_;
@@ -74,6 +74,8 @@ int main() {
   newdb::Iterator *it = db_->NewIterator(options);
   it->SeekToFirst();
 
+  db_->flushVLog();
+  
   int newv = TOTAL_RECORDS;
   while (it->Valid()) {
     newdb::Slice key = it->key();
@@ -81,16 +83,17 @@ int main() {
 
     char newval[128] = {0};
     sprintf(newval, "value%ld", newv++);
+    printf("got key: %s value: %s\n", key.data(), val.data());
     newdb::Slice rval(newval, 128);
+    printf("updating key %s, value %s\n", key.data(), rval.data());
     db_->Put(newdb::WriteOptions(), key, rval);
     it->Next();
   }
   printf("finished update records through iterator\n");
   delete it;
 
+  db_->flushVLog();
 
-
-  // db_->flushVLog();
 
   it = db_->NewIterator(options);
   it->SeekToFirst();
