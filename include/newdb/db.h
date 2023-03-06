@@ -70,8 +70,9 @@ public:
   // The returned iterator should be deleted before this db is deleted.
   virtual Iterator *NewIterator(const ReadOptions &options) = 0;
 
-  virtual void flushVLog() = 0;
+  virtual void runGC() = 0;
   virtual void vLogGarbageCollect() = 0;
+  
   // virtual rocksdb::DB* get_keydb() = 0;
   // virtual rocksdb::DB* get_valuedb() = 0;
 
@@ -79,6 +80,9 @@ private:
   // No copying allowed
   DB(const DB &);
   void operator=(const DB &);
+
+public:
+  rocksdb::DB *valuedb_;
 };
 
 // Destroy the contents of the specified database.

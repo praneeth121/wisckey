@@ -10,7 +10,7 @@ namespace newdb {
 
 class NewDbCompactionFilter : public rocksdb::CompactionFilter {
 public:
-  explicit NewDbCompactionFilter(rocksdb::DB *keydb, std::set<uint64_t> *phy_keys_for_gc_list) : keydb_(keydb),garbage_keys_(phy_keys_for_gc_list){};
+  explicit NewDbCompactionFilter(std::set<uint64_t> *phy_keys_for_gc_list) : garbage_keys_(phy_keys_for_gc_list){};
   static const char *kClassName() { return "NewDbCompactionFilter"; }
   const char *Name() const override { return kClassName(); }
 
@@ -21,13 +21,12 @@ public:
            std::string * /*skip_until*/) const override;
 
 private:
-  rocksdb::DB *keydb_;
   std::set<uint64_t>* garbage_keys_;
 };
 
 class NewDbCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
 public:
-  explicit NewDbCompactionFilterFactory(rocksdb::DB *keydb) : keydb_(keydb){};
+  explicit NewDbCompactionFilterFactory() {};
   ~NewDbCompactionFilterFactory() override {}
 
   std::unique_ptr<rocksdb::CompactionFilter> CreateCompactionFilter(
@@ -38,7 +37,6 @@ public:
     garbage_keys_ = garbage_keys;
   }
 private:
-  rocksdb::DB *keydb_;
   std::set<uint64_t>* garbage_keys_;
 };
 
@@ -65,12 +63,11 @@ NewDbCompactionFilterFactory::CreateCompactionFilter(
  if(context.is_manual_compaction) {
     printf("called an manual compaction\n");
     return std::unique_ptr<rocksdb::CompactionFilter>(
-        new NewDbCompactionFilter(keydb_, garbage_keys_));
+        new NewDbCompactionFilter(garbage_keys_));
  }
   else {
     printf("called an automatic compaction, this should not have happend at all\n");
-    return std::unique_ptr<rocksdb::CompactionFilter>(
-          new NewDbCompactionFilter(keydb_, NULL));
+    return std::unique_ptr<rocksdb::CompactionFilter>(nullptr);
   }
 }
 

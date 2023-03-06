@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 150
+#define TOTAL_RECORDS 1000
 
 int main() {
   newdb::DB* db_;
@@ -25,9 +25,9 @@ int main() {
   valuedbOptions.allow_mmap_writes = false;
   valuedbOptions.use_direct_io_for_flush_and_compaction = true;
   valuedbOptions.use_direct_reads = true;
-  valuedbOptions.write_buffer_size = 2 * 1024;
-  valuedbOptions.target_file_size_base = 2 * 1024;
-  valuedbOptions.max_bytes_for_level_base = 2 * 1024;
+  valuedbOptions.write_buffer_size = 32 * 2048;
+  valuedbOptions.target_file_size_base = 32 * 2048;
+  valuedbOptions.max_bytes_for_level_base = 32 * 2048;
   options_.valuedbOptions = valuedbOptions;
 
   newdb::Status status = newdb::DB::Open(options_, "", &db_);
@@ -97,6 +97,12 @@ int main() {
       assert(s.IsNotFound());
     else 
       assert(!strcmp(gval.data(), data[i].second.data()));
-  } 
+  }
+
+
+  // test for GC Implementation
+  db_->runGC();
+
+
 }
 
