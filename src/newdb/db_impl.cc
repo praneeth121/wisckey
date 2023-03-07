@@ -19,7 +19,7 @@ namespace newdb {
 
 DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
-      dbstats_(nullptr), sequence_(0) {
+      dbstats_(nullptr), sequence_(2000) {
 
   // start thread pool for async i/o
   pool_ = threadpool_create(options.threadPoolThreadsNum,
@@ -188,13 +188,19 @@ void DBImpl::runGC() {
 
   fprintf(stdout, "running garbage collection:\n");
 
+  std::vector<uint64_t> tmp_gc_keys;
   std::vector<uint64_t>::iterator gc_keys_start, gc_keys_end;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
-    std::sort(phy_keys_for_gc.begin(), phy_keys_for_gc.end());
-    gc_keys_start = phy_keys_for_gc.begin();
-    gc_keys_end = phy_keys_for_gc.end();
+    // make a copy from main gc_key to workspace 
+    tmp_gc_keys.insert(tmp_gc_keys.end(), phy_keys_for_gc.begin(), phy_keys_for_gc.end());
+    // clean the global keys
+    phy_keys_for_gc.clear();
+
   }
+  std::sort(tmp_gc_keys.begin(), tmp_gc_keys.end());
+  gc_keys_start = tmp_gc_keys.begin();
+  gc_keys_end = tmp_gc_keys.end();
 
   fprintf(stdout, "Following keys are considered for GC\n");
   for (auto it = gc_keys_start; it != gc_keys_end; ++it) {
@@ -250,7 +256,6 @@ void DBImpl::runGC() {
   }
 
   std::vector<GCCollectedKeys> deletion_keys;
-
   int file_idx = 0;
   std::vector<std::string> compaction_files;
   std::set<uint64_t> gc_keys_set;
@@ -336,22 +341,24 @@ void DBImpl::runGC() {
   gc_keys_set.clear();
   deletion_keys_tmp.clear();
   // cleaning the gc_keys
-  // for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
-  //   printf("%ld ", *it);
-  // }
+  for (auto it = tmp_gc_keys.begin(); it != tmp_gc_keys.end();++it) {
+    printf("%ld ", *it);
+  }
   printf("\n");
+  // TODO: issue at this location
+  printf("size: %ld\n", deletion_keys.size());
+  for(int i = deletion_keys.size()-1;i >= 0;i--) {
+    tmp_gc_keys.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
+  }
   // deleting from the reverse order
   {
   std::unique_lock<std::mutex> lock(gc_keys_mutex);
-  printf("size: %ld\n", deletion_keys.size());
-  for(int i = deletion_keys.size()-1;i >= 0;i--) {
-    phy_keys_for_gc.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
-  }
+  phy_keys_for_gc.insert(phy_keys_for_gc.end(), tmp_gc_keys.begin(), tmp_gc_keys.end());
   }
   //
-  // for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
-  //   printf("%ld ", *it);
-  // }
+  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+    printf("%ld ", *it);
+  }
   printf("\n");
 
   valuedb_->GetProperty("rocksdb.stats", &stats);

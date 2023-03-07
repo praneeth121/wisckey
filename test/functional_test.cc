@@ -13,6 +13,7 @@
 static void *runGC(void* ptr) {
   newdb::DB* db_ = (newdb::DB*) ptr;
   db_->runGC();
+  exit(0);
 }
 
 int main() {
@@ -108,12 +109,11 @@ int main() {
 
 
   // test for GC Implementation
-  db_->runGC();
-  // pthread_t gc_thread;
-  // int gc_res;
-  // gc_res = pthread_create( &gc_thread, NULL, runGC, (void*) db_);
-  // pthread_join(gc_thread, NULL);
-  // exit(0);
+  // db_->runGC();
+  pthread_t gc_thread;
+  int gc_res;
+  gc_res = pthread_create( &gc_thread, NULL, runGC, (void*) db_);
+  pthread_join(gc_thread, NULL);
 }
 
 
