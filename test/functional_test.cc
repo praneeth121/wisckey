@@ -10,6 +10,11 @@
 
 #define TOTAL_RECORDS 1000
 
+static void *runGC(void* ptr) {
+  newdb::DB* db_ = (newdb::DB*) ptr;
+  db_->runGC();
+}
+
 int main() {
   newdb::DB* db_;
   newdb::Options options_;
@@ -25,10 +30,12 @@ int main() {
   valuedbOptions.allow_mmap_writes = false;
   valuedbOptions.use_direct_io_for_flush_and_compaction = true;
   valuedbOptions.use_direct_reads = true;
-  valuedbOptions.write_buffer_size = 32 * 2048;
-  valuedbOptions.target_file_size_base = 32 * 2048;
-  valuedbOptions.max_bytes_for_level_base = 32 * 2048;
+  valuedbOptions.write_buffer_size = 16 * 2048;// 2 * 1024;// 32 * 2048;
+  valuedbOptions.target_file_size_base = 16 * 2048;// 2 * 1024;// 32 * 2048;
+  valuedbOptions.max_bytes_for_level_base = 16 * 2048;// 2 * 1024;//32 * 2048;
+  valuedbOptions.stats_dump_period_sec = 10;
   options_.valuedbOptions = valuedbOptions;
+
 
   newdb::Status status = newdb::DB::Open(options_, "", &db_);
   if (status.ok())
@@ -102,7 +109,11 @@ int main() {
 
   // test for GC Implementation
   db_->runGC();
-
-
+  // pthread_t gc_thread;
+  // int gc_res;
+  // gc_res = pthread_create( &gc_thread, NULL, runGC, (void*) db_);
+  // pthread_join(gc_thread, NULL);
+  // exit(0);
 }
+
 

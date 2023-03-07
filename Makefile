@@ -29,7 +29,7 @@ wisckey:
 	$(CC) -shared -o $(HOME)/libs/$(TARGET) $(CXXFLAG) $(SRCS) $(INCLUDES) $(LIBS)
 
 newdb:
-	$(CC) -shared -o $(HOME)/libs/$(NEWDB_TARGET) $(CXXFLAG) $(NDB_SRCS) $(INCLUDES) $(LIBS)
+	$(CC) -g -shared -o $(HOME)/libs/$(NEWDB_TARGET) $(CXXFLAG) $(NDB_SRCS) $(INCLUDES) $(LIBS)
 
 install:
 	cp $(HOME)/libs/$(TARGET) $(INSTALL_PATH) 

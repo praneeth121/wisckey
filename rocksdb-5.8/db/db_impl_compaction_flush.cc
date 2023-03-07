@@ -992,6 +992,7 @@ Status DBImpl::EnableAutoCompaction(
   Status s;
   for (auto cf_ptr : column_family_handles) {
     Status status =
+      // MARK
         this->SetOptions(cf_ptr, {{"disable_auto_compactions", "false"}});
     if (!status.ok()) {
       s = status;
@@ -1424,6 +1425,10 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
       prepicked_compaction == nullptr
           ? nullptr
           : prepicked_compaction->manual_compaction_state;
+  if(manual_compaction != nullptr)
+    printf("debug point: manual compaction is triggered\n");
+  else
+    printf("debug point: auto compaction is triggered\n");
   *made_progress = false;
   mutex_.AssertHeld();
   TEST_SYNC_POINT("DBImpl::BackgroundCompaction:Start");
@@ -1683,6 +1688,7 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
     compaction_job.Prepare();
 
     mutex_.Unlock();
+    printf("debug point: suspect for auto compaction that is triggered by botoom_level\n");
     compaction_job.Run();
     TEST_SYNC_POINT("DBImpl::BackgroundCompaction:NonTrivial:AfterRun");
     mutex_.Lock();

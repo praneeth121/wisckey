@@ -73,6 +73,7 @@ public:
   Status Get(const ReadOptions &options, const Slice &key, std::string *value);
   Iterator *NewIterator(const ReadOptions &);
   void vLogGarbageCollect();
+  void* GcWork(void* ptr);
 
 private:
   Options options_;

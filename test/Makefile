@@ -18,7 +18,7 @@ test_new:
 	$(CC) test_new.cc -o test_new $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 functional_test: functional_test.cc 
-	$(CC) functional_test.cc -o functional_test $(INCLUDES) $(LIBS) $(CXXFLAG)
+	$(CC) -g functional_test.cc -o functional_test $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 rocks_perf:
 	$(CC) rocks_perf.cc -o rocks_perf $(INCLUDES) $(LIBS) $(CXXFLAG)

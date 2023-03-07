@@ -50,7 +50,7 @@ DBImpl::~DBImpl() {
   rocksdb::CancelAllBackgroundWork(valuedb_, true);
   delete valuedb_;
   delete key_map_;
-
+  phy_keys_for_gc.clear();
   // thread pool
   threadpool_destroy(pool_, 1);
   sem_destroy(&q_sem_);
@@ -279,6 +279,7 @@ void DBImpl::runGC() {
           printf("%s ", compaction_files[i].data());
         }
         printf("\n");
+
         compaction_filter_factory->set_garbage_keys(&gc_keys_set);
         
         valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
@@ -335,26 +336,29 @@ void DBImpl::runGC() {
   gc_keys_set.clear();
   deletion_keys_tmp.clear();
   // cleaning the gc_keys
-  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
-    printf("%ld ", *it);
-  }
+  // for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+  //   printf("%ld ", *it);
+  // }
   printf("\n");
   // deleting from the reverse order
+  {
+  std::unique_lock<std::mutex> lock(gc_keys_mutex);
   printf("size: %ld\n", deletion_keys.size());
   for(int i = deletion_keys.size()-1;i >= 0;i--) {
     phy_keys_for_gc.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
   }
-  
-  //
-  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
-    printf("%ld ", *it);
   }
+  //
+  // for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+  //   printf("%ld ", *it);
+  // }
   printf("\n");
 
   valuedb_->GetProperty("rocksdb.stats", &stats);
   printf("stats: %s\n", stats.c_str());
   
 }
+
 
 void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
                           std::vector<std::string> *vmeta_list, int idx,
