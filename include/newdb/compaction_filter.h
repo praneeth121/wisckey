@@ -4,13 +4,13 @@
 
 #include "rocksdb/compaction_filter.h"
 #include "rocksdb/slice.h"
-#include <set>
+#include <unordered_set>
 // #define DEBUG
 namespace newdb {
 
 class NewDbCompactionFilter : public rocksdb::CompactionFilter {
 public:
-  explicit NewDbCompactionFilter(std::set<uint64_t> *phy_keys_for_gc_list) : garbage_keys_(phy_keys_for_gc_list){};
+  explicit NewDbCompactionFilter(std::unordered_set<uint64_t> *phy_keys_for_gc_list) : garbage_keys_(phy_keys_for_gc_list){};
   static const char *kClassName() { return "NewDbCompactionFilter"; }
   const char *Name() const override { return kClassName(); }
 
@@ -21,7 +21,7 @@ public:
            std::string * /*skip_until*/) const override;
 
 private:
-  std::set<uint64_t>* garbage_keys_;
+  std::unordered_set<uint64_t>* garbage_keys_;
 };
 
 class NewDbCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
@@ -33,11 +33,11 @@ public:
       const rocksdb::CompactionFilter::Context &context) override;
   static const char *kClassName() { return "NewDbCompactionFilterFactory"; }
   const char *Name() const override { return kClassName(); }
-  void set_garbage_keys(std::set<uint64_t>* garbage_keys) {
+  void set_garbage_keys(std::unordered_set<uint64_t>* garbage_keys) {
     garbage_keys_ = garbage_keys;
   }
 private:
-  std::set<uint64_t>* garbage_keys_;
+  std::unordered_set<uint64_t>* garbage_keys_;
 };
 
 rocksdb::CompactionFilter::Decision
@@ -52,6 +52,7 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
   auto it = garbage_keys_->find(*(uint64_t*)key.data());
   if (it != garbage_keys_->end()) {
     printf("%ld is a garbage key\n", (*(uint64_t *)key.data()));
+    garbage_keys_->erase(it);
     return rocksdb::CompactionFilter::Decision::kRemove;
   }
   return rocksdb::CompactionFilter::Decision::kKeep;

@@ -19,7 +19,7 @@ namespace newdb {
 
 DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
-      dbstats_(nullptr), sequence_(2000) {
+      dbstats_(nullptr), sequence_(0) {
 
   // start thread pool for async i/o
   pool_ = threadpool_create(options.threadPoolThreadsNum,
@@ -30,7 +30,8 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
   key_map_ = NewMemMap();
   // apply db options
   rocksdb::Options valuedbOptions = options.valuedbOptions;
-  valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory());
+  valuedbOptions.compaction_filter_factory.reset(
+      new NewDbCompactionFilterFactory());
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
 
   rocksdb::Status status =
@@ -192,13 +193,15 @@ void DBImpl::runGC() {
   std::vector<uint64_t>::iterator gc_keys_start, gc_keys_end;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
-    // make a copy from main gc_key to workspace 
-    tmp_gc_keys.insert(tmp_gc_keys.end(), phy_keys_for_gc.begin(), phy_keys_for_gc.end());
+    // make a copy from main gc_key to workspace
+    tmp_gc_keys.insert(tmp_gc_keys.end(), phy_keys_for_gc.begin(),
+                       phy_keys_for_gc.end());
     // clean the global keys
     phy_keys_for_gc.clear();
-
   }
   std::sort(tmp_gc_keys.begin(), tmp_gc_keys.end());
+  std::unordered_set<uint64_t> CompactionFilterGCSet(tmp_gc_keys.begin(),
+                                           tmp_gc_keys.end());
   gc_keys_start = tmp_gc_keys.begin();
   gc_keys_end = tmp_gc_keys.end();
 
@@ -211,8 +214,8 @@ void DBImpl::runGC() {
   rocksdb::ColumnFamilyMetaData cf_meta;
   valuedb_->GetColumnFamilyMetaData(&cf_meta);
 
- std::vector<GCMetadata> input_files;
- for (auto level : cf_meta.levels) {
+  std::vector<GCMetadata> input_files;
+  for (auto level : cf_meta.levels) {
     for (auto file : level.files) {
       uint64_t smallest_key = *((uint64_t *)file.smallestkey.data());
       uint64_t largest_key = *((uint64_t *)file.largestkey.data());
@@ -246,8 +249,8 @@ void DBImpl::runGC() {
     }
   }
 
-
-  std::sort(input_files.begin(), input_files.end(),cust_comparator_for_sstfiles);
+  std::sort(input_files.begin(), input_files.end(),
+            cust_comparator_for_sstfiles);
 
   for (auto it = input_files.begin(); it != input_files.end(); ++it) {
     printf("file start %ld and end: %ld\n",
@@ -258,37 +261,30 @@ void DBImpl::runGC() {
   std::vector<GCCollectedKeys> deletion_keys;
   int file_idx = 0;
   std::vector<std::string> compaction_files;
-  std::set<uint64_t> gc_keys_set;
   std::vector<GCCollectedKeys> deletion_keys_tmp;
   GCCollectedKeys gc_collected_keys_obj;
   int next_lvl = 0;
-  auto *compaction_filter_factory = reinterpret_cast<NewDbCompactionFilterFactory *>(valuedb_->GetOptions().compaction_filter_factory.get());
+  auto *compaction_filter_factory =
+      reinterpret_cast<NewDbCompactionFilterFactory *>(
+          valuedb_->GetOptions().compaction_filter_factory.get());
+  compaction_filter_factory->set_garbage_keys(&CompactionFilterGCSet);
 
   while (file_idx < input_files.size()) {
     if (input_files[file_idx].ready_for_gc) {
       printf("file added for GC\n");
       // can be optimised using vector iterator technique
-      gc_collected_keys_obj.smallest_itr = input_files[file_idx].smallest_itr;
-      gc_collected_keys_obj.largest_itr = input_files[file_idx].largest_itr;
-      deletion_keys_tmp.push_back(gc_collected_keys_obj);
-      gc_keys_set.insert(input_files[file_idx].smallest_itr,
-                         input_files[file_idx].largest_itr);
       compaction_files.push_back(input_files[file_idx].sstmeta.name);
       next_lvl = std::max(next_lvl, input_files[file_idx].level + 1);
     } else {
       if (compaction_files.size() > 1) {
-        deletion_keys.insert(deletion_keys.end(), deletion_keys_tmp.begin(), deletion_keys_tmp.end());
         printf("running a garbage collection on %d files\n",
                compaction_files.size());
-        for(int i = 0;i < compaction_files.size();i++) {
+        for (int i = 0; i < compaction_files.size(); i++) {
           printf("%s ", compaction_files[i].data());
         }
         printf("\n");
-
-        compaction_filter_factory->set_garbage_keys(&gc_keys_set);
-        
         valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
-                               next_lvl);    
+                               next_lvl);
 
         rocksdb::ReadOptions rdopts;
         rocksdb::Iterator *it = valuedb_->NewIterator(rdopts);
@@ -304,25 +300,20 @@ void DBImpl::runGC() {
       }
       next_lvl = 0;
       compaction_files.clear();
-      gc_keys_set.clear();
-      deletion_keys_tmp.clear();
     }
     file_idx++;
   }
 
-  // final run 
-    if (compaction_files.size() > 1) {
-    deletion_keys.insert(deletion_keys.end(), deletion_keys_tmp.begin(), deletion_keys_tmp.end());
+  // final run
+  if (compaction_files.size() > 1) {
     printf("running a garbage collection on %d files\n",
-            compaction_files.size());
-    for(int i = 0;i < compaction_files.size();i++) {
+           compaction_files.size());
+    for (int i = 0; i < compaction_files.size(); i++) {
       printf("%s ", compaction_files[i].data());
     }
     printf("\n");
-    compaction_filter_factory->set_garbage_keys(&gc_keys_set);
-    
     valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
-                            next_lvl);    
+                           next_lvl);
 
     rocksdb::ReadOptions rdopts;
     rocksdb::Iterator *it = valuedb_->NewIterator(rdopts);
@@ -338,34 +329,28 @@ void DBImpl::runGC() {
   }
   next_lvl = 0;
   compaction_files.clear();
-  gc_keys_set.clear();
-  deletion_keys_tmp.clear();
+
   // cleaning the gc_keys
-  for (auto it = tmp_gc_keys.begin(); it != tmp_gc_keys.end();++it) {
+  for (auto it = tmp_gc_keys.begin(); it != tmp_gc_keys.end(); ++it) {
     printf("%ld ", *it);
   }
   printf("\n");
-  // TODO: issue at this location
-  printf("size: %ld\n", deletion_keys.size());
-  for(int i = deletion_keys.size()-1;i >= 0;i--) {
-    tmp_gc_keys.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
-  }
+  tmp_gc_keys.clear();
   // deleting from the reverse order
   {
-  std::unique_lock<std::mutex> lock(gc_keys_mutex);
-  phy_keys_for_gc.insert(phy_keys_for_gc.end(), tmp_gc_keys.begin(), tmp_gc_keys.end());
+    std::unique_lock<std::mutex> lock(gc_keys_mutex);
+    phy_keys_for_gc.insert(phy_keys_for_gc.end(), CompactionFilterGCSet.begin(),
+                           CompactionFilterGCSet.end());
   }
   //
-  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end();++it) {
+  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it) {
     printf("%ld ", *it);
   }
   printf("\n");
 
   valuedb_->GetProperty("rocksdb.stats", &stats);
   printf("stats: %s\n", stats.c_str());
-  
 }
-
 
 void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
                           std::vector<std::string> *vmeta_list, int idx,

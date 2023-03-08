@@ -73,7 +73,7 @@ public:
   Status Get(const ReadOptions &options, const Slice &key, std::string *value);
   Iterator *NewIterator(const ReadOptions &);
   void vLogGarbageCollect();
-  void* GcWork(void* ptr);
+  void *GcWork(void *ptr);
 
 private:
   Options options_;
@@ -81,8 +81,6 @@ private:
   // rocksdb for key-offset
 public:
   Map *key_map_;
-  
-  
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
@@ -126,10 +124,9 @@ public:
 };
 /** custom comparator **/
 
- 
 struct GCCollectedKeys {
   std::vector<uint64_t>::iterator smallest_itr;
-  std::vector<uint64_t>::iterator largest_itr; 
+  std::vector<uint64_t>::iterator largest_itr;
 };
 
 } // namespace newdb
