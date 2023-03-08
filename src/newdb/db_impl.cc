@@ -17,6 +17,19 @@
 
 namespace newdb {
 
+typedef struct {
+  int fd;
+  void *buf;
+  size_t count;
+  off_t offset;
+
+  void (*callback)(void *);
+  void *argument;
+} dev_io_context;
+
+void* run_compaction(void* compaction_object) {
+
+} 
 DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
       dbstats_(nullptr), sequence_(0) {

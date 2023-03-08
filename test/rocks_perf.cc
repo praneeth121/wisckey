@@ -558,11 +558,14 @@ int main(int argc, char *argv[]) {
   keydbOptions.allow_mmap_writes = false;
   keydbOptions.use_direct_io_for_flush_and_compaction = true;
   keydbOptions.use_direct_reads = true;
-  keydbOptions.write_buffer_size = 512 << 20;
-  keydbOptions.max_write_buffer_number = 5;
-  keydbOptions.min_write_buffer_number_to_merge = 3;
-  keydbOptions.target_file_size_base = 2 * 1024* 1048576;
-  keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
+  rocksOptions.write_buffer_size = 64 << 20;
+  rocksOptions.target_file_size_base = 64 * 1048576;
+  rocksOptions.max_bytes_for_level_base = 64 * 1048576;
+  // keydbOptions.write_buffer_size = 512 << 20;
+  // keydbOptions.max_write_buffer_number = 5;
+  // keydbOptions.min_write_buffer_number_to_merge = 3;
+  // keydbOptions.target_file_size_base = 2 * 1024* 1048576;
+  // keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
 
   rocksdb::DB *db = NULL;
   rocksdb::DB::Open(keydbOptions, dev_path, &db);
@@ -641,7 +644,9 @@ int main(int argc, char *argv[]) {
 #ifdef PERF_RD_LAT
   proc_rd_lat(t, args);
 #endif
-
+  std::string stats;
+  db->GetProperty("rocksdb.stats", &stats);
+  fprintf(stdout, "stats: %s\n", stats.c_str());
   delete db;
 
   free(keys);

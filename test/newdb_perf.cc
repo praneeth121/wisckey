@@ -299,6 +299,7 @@ int perform_insertion(int id, newdb::DB *db, int count, uint8_t klen, uint32_t v
     if (key_gen == 1) {
       memcpy(key, keys, klen);
     }
+
     else {
       if (key_mode == 0) {
         char *key_str = (char*) malloc (sizeof(long)*2+1);
@@ -322,6 +323,7 @@ int perform_insertion(int id, newdb::DB *db, int count, uint8_t klen, uint32_t v
       }
       
     }
+    
     char *rand_val = gen.Generate(vlen);
     memcpy(value, rand_val, vlen);
     
