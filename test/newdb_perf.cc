@@ -535,9 +535,9 @@ int main(int argc, char *argv[]) {
   keydbOptions.allow_mmap_writes = false;
   keydbOptions.use_direct_io_for_flush_and_compaction = true;
   keydbOptions.use_direct_reads = true;
-  keydbOptions.write_buffer_size = 64 << 20;
-  keydbOptions.target_file_size_base = 64 * 1048576;
-  keydbOptions.max_bytes_for_level_base = 64 * 1048576;
+  keydbOptions.write_buffer_size = 2 << 30;
+  keydbOptions.target_file_size_base = 2 * 1024 * 1048576;
+  keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
   options.keydbOptions = keydbOptions;
 
   rocksdb::Options valuedbOptions;
@@ -646,3 +646,4 @@ int main(int argc, char *argv[]) {
   
   return SUCCESS;
 }
+

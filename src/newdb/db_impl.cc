@@ -37,7 +37,7 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     exit(-1);
   }
   rocksdb::Options valuedbOptions = options.valuedbOptions;
-  valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
+  //valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
 
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
@@ -71,6 +71,30 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 
   RecordTick(options_.statistics.get(), REQ_PUT);
   // write phy-log key mapping in db
+  
+  // 
+  rocksdb::Slice gc_lkey(key.data(), key.size());
+  std::string gc_pkey_str;
+  rocksdb::Status gc_s =
+      keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+
+  int ri_retry_cnt = 0;
+  while (!(gc_s.ok())) { // read index retry, rare
+    usleep(100);
+    gc_s = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+    if (ri_retry_cnt++ >= 3)
+      break;
+  }
+
+  if (gc_s.ok()) {
+    // TODO: Dynamic memory limitations
+    {
+      std::unique_lock<std::mutex> lock(gc_keys_mutex);
+      if (gc_pkey_str.size() != 0)
+        phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+    }
+  }
+  //
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
   seq = get_new_seq();
@@ -87,6 +111,7 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
     if (wi_retry_cnt++ >= 3)
       return Status().IOError(Slice());
   }
+ 
 
   // prepare physical value
   int pval_size = sizeof(uint8_t) + key.size() + value.size();

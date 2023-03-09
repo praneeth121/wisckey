@@ -76,6 +76,7 @@ public:
 private:
   Options options_;
   std::string dbname_;
+  std::mutex gc_keys_mutex;
   // rocksdb for key-offset
 public:
   rocksdb::DB *keydb_;
@@ -85,6 +86,7 @@ private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
   uint64_t sequence_;
   std::mutex seq_mutex_;
+  std::vector<uint64_t> phy_keys_for_gc;
 
   uint64_t get_new_seq() {
     uint64_t seq;
@@ -114,3 +116,4 @@ private:
 } // namespace newdb
 
 #endif
+
