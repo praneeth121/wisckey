@@ -20,15 +20,28 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     : options_(options), dbname_(dbname), inflight_io_count_(0),
       dbstats_(nullptr), sequence_(0) {
 
-
   // start thread pool for async i/o
   pool_ = threadpool_create(options.threadPoolThreadsNum,
                             options.threadPoolQueueDepth, 0, &q_sem_);
   sem_init(&q_sem_, 0, options.threadPoolQueueDepth - 1);
+  auto keydbOptions = options.keydbOptions;
 
+  rocksdb::BlockBasedTableOptions table_options;
+  table_options.filter_policy.reset(rocksdb::NewBloomFilterPolicy(8, true));
+  table_options.block_size = 4096;
+  table_options.cache_index_and_filter_blocks = true;
+  table_options.pin_l0_filter_and_index_blocks_in_cache = true;
+  table_options.cache_index_and_filter_blocks_with_high_priority = true;
+  std::shared_ptr<rocksdb::Cache> cache = rocksdb::NewLRUCache(2147483648 * 2);
+  table_options.block_cache = cache;
+
+  // table_options.allow_os_buffer = false;
+  keydbOptions.table_factory.reset(
+      rocksdb::NewBlockBasedTableFactory(table_options));
+  keydbOptions.statistics = rocksdb::CreateDBStatistics();
   // apply db options
   rocksdb::Status status =
-      rocksdb::DB::Open(options.keydbOptions, dbname + "keydb", &keydb_);
+      rocksdb::DB::Open(keydbOptions, dbname + "keydb", &keydb_);
   if (status.ok())
     printf("rocksdb open ok\n");
   else {
@@ -37,7 +50,8 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     exit(-1);
   }
   rocksdb::Options valuedbOptions = options.valuedbOptions;
-  //valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
+  // valuedbOptions.compaction_filter_factory.reset(new
+  // NewDbCompactionFilterFactory(keydb_));
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
 
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
@@ -71,29 +85,36 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 
   RecordTick(options_.statistics.get(), REQ_PUT);
   // write phy-log key mapping in db
-  
-  // 
+
   rocksdb::Slice gc_lkey(key.data(), key.size());
   std::string gc_pkey_str;
   rocksdb::Status gc_s =
       keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-
-  int ri_retry_cnt = 0;
-  while (!(gc_s.ok())) { // read index retry, rare
-    usleep(100);
-    gc_s = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-    if (ri_retry_cnt++ >= 3)
-      break;
-  }
-
-  if (gc_s.ok()) {
-    // TODO: Dynamic memory limitations
+  if (gc_s.IsNotFound()) {
+    RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
+  } else if (gc_s.ok()) {
     {
       std::unique_lock<std::mutex> lock(gc_keys_mutex);
       if (gc_pkey_str.size() != 0)
         phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
     }
   }
+  // int ri_retry_cnt = 0;
+  // while (!(gc_s.ok())) { // read index retry, rare
+  //   usleep(100);
+  //   gc_s = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
+  //   if (ri_retry_cnt++ >= 3)
+  //     break;
+  // }
+
+  // if (gc_s.ok()) {
+  //   // TODO: Dynamic memory limitations
+  //   {
+  //     std::unique_lock<std::mutex> lock(gc_keys_mutex);
+  //     if (gc_pkey_str.size() != 0)
+  //       phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+  //   }
+  // }
   //
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
@@ -111,7 +132,6 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
     if (wi_retry_cnt++ >= 3)
       return Status().IOError(Slice());
   }
- 
 
   // prepare physical value
   int pval_size = sizeof(uint8_t) + key.size() + value.size();
@@ -204,55 +224,61 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
 void DBImpl::flushVLog() {
   // implement this
   // iterator
-  rocksdb::ReadOptions rdopts;
-  rocksdb::Iterator *it = keydb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("key iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
-    it->Next();
-  }
+  printf("Block cache MISS: %ld\n",
+         keydb_->GetOptions().statistics->getTickerCount(
+             rocksdb::BLOCK_CACHE_DATA_MISS));
+  printf("Block cache HIT: %ld\n",
+         keydb_->GetOptions().statistics->getTickerCount(
+             rocksdb::BLOCK_CACHE_DATA_HIT));
+  // rocksdb::ReadOptions rdopts;
+  // rocksdb::Iterator *it = keydb_->NewIterator(rdopts);
+  // it->SeekToFirst();
+  // printf("key iterator starts: \n");
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
+  //   printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
+  //   it->Next();
+  // }
 
-  it = valuedb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("value iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
-    it->Next();
-  }
-  std::string stats;
-  valuedb_->GetProperty("rocksdb.stats", &stats);
-  printf("stats: %s\n", stats.c_str());
-  printf("compaction started\n");
-  stats = "";
-  valuedb_->CompactRange(rocksdb::CompactRangeOptions(), nullptr, nullptr);
-  valuedb_->GetProperty("rocksdb.stats", &stats);
-  printf("stats: %s\n", stats.c_str());
-  printf("compaction done\n");
+  // it = valuedb_->NewIterator(rdopts);
+  // it->SeekToFirst();
+  // printf("value iterator starts: \n");
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
+  //   printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
+  //   it->Next();
+  // }
+  // std::string stats;
+  // valuedb_->GetProperty("rocksdb.stats", &stats);
+  // printf("stats: %s\n", stats.c_str());
+  // printf("compaction started\n");
+  // stats = "";
+  // valuedb_->CompactRange(rocksdb::CompactRangeOptions(), nullptr, nullptr);
+  // valuedb_->GetProperty("rocksdb.stats", &stats);
+  // printf("stats: %s\n", stats.c_str());
+  // printf("compaction done\n");
 
-  it = keydb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("key iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
-    it->Next();
-  }
+  // it = keydb_->NewIterator(rdopts);
+  // it->SeekToFirst();
+  // printf("key iterator starts: \n");
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
+  //   printf("key %s, value %ld\n", key.data(), *((uint64_t *)val.data()));
+  //   it->Next();
+  // }
 
-  it = valuedb_->NewIterator(rdopts);
-  it->SeekToFirst();
-  printf("value iterator starts: \n");
-  while (it->Valid()) {
-    rocksdb::Slice key = it->key();
-    rocksdb::Slice val = it->value();
-    printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
-    it->Next();
-  }
+  // it = valuedb_->NewIterator(rdopts);
+  // it->SeekToFirst();
+  // printf("value iterator starts: \n");
+  // while (it->Valid()) {
+  //   rocksdb::Slice key = it->key();
+  //   rocksdb::Slice val = it->value();
+  //   printf("key %ld, value %s\n", *((uint64_t *)key.data()), val.data());
+  //   it->Next();
+  // }
 }
 
 void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
