@@ -17,9 +17,13 @@
 #include <mutex>
 #include <atomic>
 
-#include "rocksdb/slice.h"
-#include "rocksdb/comparator.h"
 #include "rocksdb/db.h"
+#include "rocksdb/filter_policy.h"
+#include "rocksdb/options.h"
+#include "rocksdb/cache.h"
+#include "rocksdb/slice.h"
+#include "rocksdb/status.h"
+#include "rocksdb/table.h"
 
 #define PERF_RD_LAT 1
 
@@ -461,8 +465,8 @@ void proc_rd_lat(int t, thread_args *args) {
 
 int main(int argc, char *argv[]) {
   char* dev_path = NULL;
-  int num_ios = 26112400;
-  int num_rds = 100000;
+  int num_ios = 167772160;
+  int num_rds = 167772160;
   int op_type = 1;
   uint8_t klen = 16;
   uint32_t vlen = 4096;
@@ -548,9 +552,15 @@ int main(int argc, char *argv[]) {
   rocksOptions.write_buffer_size = 64 << 20;
   rocksOptions.target_file_size_base = 64 * 1048576;
   rocksOptions.max_bytes_for_level_base = 64 * 1048576;
+  // std::shared_ptr<rocksdb::Cache> cache = rocksdb::NewLRUCache(2147483648);
+  // rocksdb::BlockBasedTableOptions table_options;
+  // table_options.block_cache = cache;
+  // table_options.cache_index_and_filter_blocks = true;
+  // table_options.pin_l0_filter_and_index_blocks_in_cache = true;
+  // rocksOptions.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
 
   rocksdb::DB *db = NULL;
-  rocksdb::DB::Open(rocksOptions, dev_path, &db);
+  rocksdb::DB::Open(rocksOptions, "/run/user/1005/keydb/", &db);
 
   thread_args args[t];
   pthread_t tid[t];

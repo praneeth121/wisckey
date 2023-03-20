@@ -107,15 +107,15 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   //     break;
   // }
 
-  // if (gc_s.ok()) {
-  //   // TODO: Dynamic memory limitations
-  //   {
-  //     std::unique_lock<std::mutex> lock(gc_keys_mutex);
-  //     if (gc_pkey_str.size() != 0)
-  //       phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
-  //   }
-  // }
-  //
+  if (gc_s.ok()) {
+    // TODO: Dynamic memory limitations
+    {
+      std::unique_lock<std::mutex> lock(gc_keys_mutex);
+      if (gc_pkey_str.size() != 0)
+        phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
+    }
+  }
+  
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
   seq = get_new_seq();
@@ -125,13 +125,13 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 
   rocksdb::WriteOptions write_options;
   rocksdb::Status s = keydb_->Put(write_options, lkey, pkey);
-  int wi_retry_cnt = 0;
-  while (!s.ok()) {
-    fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-    s = keydb_->Put(write_options, lkey, pkey);
-    if (wi_retry_cnt++ >= 3)
-      return Status().IOError(Slice());
-  }
+  // int wi_retry_cnt = 0;
+  // while (!s.ok()) {
+  //   fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
+  //   s = keydb_->Put(write_options, lkey, pkey);
+  //   if (wi_retry_cnt++ >= 3)
+  //     return Status().IOError(Slice());
+  // }
 
   // prepare physical value
   int pval_size = sizeof(uint8_t) + key.size() + value.size();
@@ -147,13 +147,13 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   rocksdb::Slice pval(pval_str, pval_size);
   s = valuedb_->Put(write_options, pkey, pval);
 
-  wi_retry_cnt = 0;
-  while (!s.ok()) {
-    fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-    s = valuedb_->Put(write_options, pkey, pval);
-    if (wi_retry_cnt++ >= 3)
-      return Status().IOError(Slice());
-  }
+  // wi_retry_cnt = 0;
+  // while (!s.ok()) {
+  //   fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
+  //   s = valuedb_->Put(write_options, pkey, pval);
+  //   if (wi_retry_cnt++ >= 3)
+  //     return Status().IOError(Slice());
+  // }
   assert(s.ok());
 
   free(pkey_str);
@@ -187,13 +187,13 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
     return Status().NotFound(Slice());
   }
 
-  int ri_retry_cnt = 0;
-  while (!(s.ok())) { // read index retry, rare
-    usleep(100);
-    s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
-    if (ri_retry_cnt++ >= 3)
-      return Status().NotFound(Slice());
-  }
+  // int ri_retry_cnt = 0;
+  // while (!(s.ok())) { // read index retry, rare
+  //   usleep(100);
+  //   s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
+  //   if (ri_retry_cnt++ >= 3)
+  //     return Status().NotFound(Slice());
+  // }
 
   // read from valuedb
   rocksdb::Slice pkey(pkey_str.data(), pkey_str.size());
@@ -205,13 +205,13 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
     return Status().NotFound(Slice());
   }
 
-  ri_retry_cnt = 0;
-  while (!(s.ok())) { // read index retry, rare
-    usleep(100);
-    s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
-    if (ri_retry_cnt++ >= 3)
-      return Status().NotFound(Slice());
-  }
+  // ri_retry_cnt = 0;
+  // while (!(s.ok())) { // read index retry, rare
+  //   usleep(100);
+  //   s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
+  //   if (ri_retry_cnt++ >= 3)
+  //     return Status().NotFound(Slice());
+  // }
 
   const char *ptr = pval_str.data();
   uint8_t key_len = *((uint8_t *)ptr);

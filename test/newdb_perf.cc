@@ -451,8 +451,8 @@ void proc_rd_lat(int t, thread_args *args) {
 
 int main(int argc, char *argv[]) {
   char* dev_path = NULL;
-  int num_ios = 26112400;
-  int num_rds = 100000;
+  int num_ios = 52224800;
+  int num_rds = 26112400;
   int op_type = 1;
   uint8_t klen = 16;
   uint32_t vlen = 4096;
@@ -535,10 +535,12 @@ int main(int argc, char *argv[]) {
   keydbOptions.allow_mmap_writes = false;
   keydbOptions.use_direct_io_for_flush_and_compaction = true;
   keydbOptions.use_direct_reads = true;
-  keydbOptions.write_buffer_size = 2 << 30;
-  keydbOptions.target_file_size_base = 2 * 1024 * 1048576;
-  keydbOptions.max_bytes_for_level_base = 2 * 1024 * 1048576;
+  keydbOptions.write_buffer_size = 64 << 20;
+  keydbOptions.target_file_size_base = 64 * 1024 * 1024;
+  keydbOptions.max_bytes_for_level_base = 64 * 1024 * 1024;
+  // keydbOptions.allow_os_buffer = false;
   options.keydbOptions = keydbOptions;
+  
 
   rocksdb::Options valuedbOptions;
   valuedbOptions.IncreaseParallelism();
@@ -546,14 +548,16 @@ int main(int argc, char *argv[]) {
   valuedbOptions.max_open_files = -1;
   valuedbOptions.compression = rocksdb::kNoCompression;
   valuedbOptions.paranoid_checks = false;
-  valuedbOptions.allow_mmap_reads = false;
-  valuedbOptions.allow_mmap_writes = false;
+  // valuedbOptions.allow_mmap_reads = false;
+  // valuedbOptions.allow_mmap_writes = false;
   valuedbOptions.use_direct_io_for_flush_and_compaction = true;
   valuedbOptions.use_direct_reads = true;
   valuedbOptions.write_buffer_size = 64 << 20;
   valuedbOptions.target_file_size_base = 64 * 1048576;
   valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
+  // valuedbOptions.allow_os_buffer = false;
   options.valuedbOptions = valuedbOptions;
+  
 
   options.statistics = newdb::Options::CreateDBStatistics();
   
@@ -639,7 +643,7 @@ int main(int argc, char *argv[]) {
 #ifdef PERF_RD_LAT
   proc_rd_lat(t, args);
 #endif
-
+  db->flushVLog();
   delete db;
 
   free(keys);

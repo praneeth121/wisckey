@@ -1,26 +1,25 @@
 /******* wisckey *******/
 /* db_iter.cc
-* 08/06/2019
-* by Mian Qin
-*/
-#include <mutex>
-#include <iostream>
-#include <condition_variable>
-#include <unordered_map>
-#include "wisckey/iterator.h"
+ * 08/06/2019
+ * by Mian Qin
+ */
 #include "db_impl.h"
 #include "db_iter.h"
+#include "wisckey/iterator.h"
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <unordered_map>
 
 namespace wisckey {
 
-inline int roundUp(int in, int roundTo)
-{
-    assert(roundTo > 0);
-    int remainder = in % roundTo;
-    if (remainder == 0)
-        return in;
-    else
-      return in + roundTo - remainder;
+inline int roundUp(int in, int roundTo) {
+  assert(roundTo > 0);
+  int remainder = in % roundTo;
+  if (remainder == 0)
+    return in;
+  else
+    return in + roundTo - remainder;
 }
 
 class DBIterator : public Iterator {
@@ -28,16 +27,16 @@ public:
   DBIterator(DBImpl *db, const ReadOptions &options);
   ~DBIterator();
 
-  bool Valid() const {
-    return valid_;
-  }
+  bool Valid() const { return valid_; }
   void SeekToFirst();
-  void SeekToLast() { /* NOT IMPLEMENT */ }
-  void Seek(const Slice& target);
+  void SeekToLast() { /* NOT IMPLEMENT */
+  }
+  void Seek(const Slice &target);
   void Next();
   void Prev();
   Slice key() const;
   Slice value();
+
 private:
   DBImpl *db_;
   const ReadOptions &options_;
@@ -47,12 +46,11 @@ private:
 
   // upper key hint
   Slice upper_key_;
-
 };
 
-DBIterator::DBIterator(DBImpl *db, const ReadOptions &options) 
-: db_(db), options_(options), valid_(false){
-  
+DBIterator::DBIterator(DBImpl *db, const ReadOptions &options)
+    : db_(db), options_(options), valid_(false) {
+
   rocksdb::ReadOptions rdopts;
   if (options_.upper_key != NULL) {
     upper_key_ = *(options_.upper_key); // currently not apply to rocks
@@ -61,33 +59,30 @@ DBIterator::DBIterator(DBImpl *db, const ReadOptions &options)
   it_ = db_->rdb_->NewIterator(rdopts);
 }
 
-DBIterator::~DBIterator() { 
-  delete it_; 
-}
+DBIterator::~DBIterator() { delete it_; }
 
-
-void DBIterator::SeekToFirst() { 
+void DBIterator::SeekToFirst() {
   it_->SeekToFirst();
 
   valid_ = it_->Valid();
 }
 
-
-void DBIterator::Seek(const Slice& target) { 
+void DBIterator::Seek(const Slice &target) {
   rocksdb::Slice rocks_target(target.data(), target.size());
   // none phase
-  it_->Seek(rocks_target); 
+  it_->Seek(rocks_target);
   valid_ = it_->Valid();
 }
 
-void DBIterator::Prev() { /* NOT FULLY IMPLEMENT, Suppose ONLY CALL BEFORE next */ 
+void DBIterator::Prev() { /* NOT FULLY IMPLEMENT, Suppose ONLY CALL BEFORE next
+                           */
   assert(valid_);
   // std::string curr_key = it_->key().ToString();
 
   // do {
   //   it_->Prev();
-  // } while (it_->Valid() && db_->options_.comparator->Compare(it_->key(), curr_key) >= 0);
-  // valid_ = it_->Valid();
+  // } while (it_->Valid() && db_->options_.comparator->Compare(it_->key(),
+  // curr_key) >= 0); valid_ = it_->Valid();
 }
 
 void DBIterator::Next() {
@@ -103,15 +98,16 @@ Slice DBIterator::key() const {
 
 Slice DBIterator::value() {
   assert(valid_);
-  
+
   value_.clear();
   rocksdb::Slice rocks_key = it_->key();
   std::string rocks_val;
-  rocksdb::Status s = db_->rdb_->Get(rocksdb::ReadOptions(), rocks_key, &rocks_val);
-  
+  rocksdb::Status s =
+      db_->rdb_->Get(rocksdb::ReadOptions(), rocks_key, &rocks_val);
+
   assert(s.ok() && rocks_val.size() == 12);
   char *p = &rocks_val[0];
-  uint64_t logOffset= *((uint64_t *)p);
+  uint64_t logOffset = *((uint64_t *)p);
   p = p + 8;
   uint32_t valSize = *((uint32_t *)p);
   value_.resize(valSize);
@@ -122,7 +118,7 @@ Slice DBIterator::value() {
   return Slice(value_);
 }
 
-Iterator* NewDBIterator(DBImpl *db, const ReadOptions &options) {
+Iterator *NewDBIterator(DBImpl *db, const ReadOptions &options) {
   return new DBIterator(db, options);
 }
 

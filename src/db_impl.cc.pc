@@ -1,20 +1,20 @@
 /******* wisckey *******/
 /* db_impl.cc
-* 07/23/2019
-* by Mian Qin
-*/
-#include <iostream>
-#include <mutex>
-#include "wisckey/db.h"
-#include "wisckey/iterator.h"
+ * 07/23/2019
+ * by Mian Qin
+ */
 #include "db_impl.h"
 #include "db_iter.h"
 #include "hash.h"
+#include "wisckey/db.h"
+#include "wisckey/iterator.h"
+#include <iostream>
+#include <mutex>
 
 namespace wisckey {
 
-DBImpl::DBImpl(const Options& options, const std::string& dbname) 
-: options_(options) {
+DBImpl::DBImpl(const Options &options, const std::string &dbname)
+    : options_(options) {
   rocksdb::Options rocksOptions;
   rocksOptions.IncreaseParallelism();
   rocksOptions.OptimizeLevelStyleCompaction();
@@ -32,58 +32,61 @@ DBImpl::DBImpl(const Options& options, const std::string& dbname)
 
   rocksdb::BlockBasedTableOptions table_options;
   // table_options.cache_index_and_filter_blocks = true;
-  // table_options.block_cache = rocksdb::NewLRUCache(options.indexCacheSize * 1024 * 1024LL); 
-  rocksOptions.table_factory.reset(rocksdb::NewBlockBasedTableFactory(table_options));
+  // table_options.block_cache = rocksdb::NewLRUCache(options.indexCacheSize *
+  // 1024 * 1024LL);
+  rocksOptions.table_factory.reset(
+      rocksdb::NewBlockBasedTableFactory(table_options));
 
   if (options.dataCacheSize > 0) {
     cache_ = NewLRUCache((size_t)options.dataCacheSize << 20, 0);
-  }
-  else {
+  } else {
     cache_ = nullptr;
   }
 
   // apply db options
   rocksdb::Status status = rocksdb::DB::Open(rocksOptions, dbname, &rdb_);
-  if (status.ok()) printf("rocksdb open ok\n");
-  else printf("rocksdb open error\n");
+  if (status.ok())
+    printf("rocksdb open ok\n");
+  else
+    printf("rocksdb open error\n");
 
-  std::string dbWiskeyLog = dbname+"/wiskey.log";
-  if( access( dbWiskeyLog.c_str(), F_OK ) == 0 ) {
-    logFD_ = open(dbWiskeyLog.c_str(), O_RDWR|O_APPEND);
+  std::string dbWiskeyLog = dbname + "/wiskey.log";
+  if (access(dbWiskeyLog.c_str(), F_OK) == 0) {
+    logFD_ = open(dbWiskeyLog.c_str(), O_RDWR | O_APPEND);
     lseek(logFD_, 0, SEEK_END);
-    std::cout << "Open existing Wisckey log path:  " << dbWiskeyLog << " (" << logFD_ << ")" << std::endl;
-  }
-  else {
-    logFD_ = open(dbWiskeyLog.c_str(), O_RDWR|O_CREAT|O_APPEND, 0777);
-    std::cout << "Create Wisckey log path:  " << dbWiskeyLog << " (" << logFD_ << ")" << std::endl;
+    std::cout << "Open existing Wisckey log path:  " << dbWiskeyLog << " ("
+              << logFD_ << ")" << std::endl;
+  } else {
+    logFD_ = open(dbWiskeyLog.c_str(), O_RDWR | O_CREAT | O_APPEND, 0777);
+    std::cout << "Create Wisckey log path:  " << dbWiskeyLog << " (" << logFD_
+              << ")" << std::endl;
   }
 }
 
 DBImpl::~DBImpl() {
-  if (cache_) delete cache_;
+  if (cache_)
+    delete cache_;
   delete rdb_;
   fsync(logFD_);
   fdatasync(logFD_);
   close(logFD_);
 }
 
-inline int roundUp(int in, int roundTo)
-{
-    assert(roundTo > 0);
-    int remainder = in % roundTo;
-    if (remainder == 0)
-        return in;
-    else
-      return in + roundTo - remainder;
+inline int roundUp(int in, int roundTo) {
+  assert(roundTo > 0);
+  int remainder = in % roundTo;
+  if (remainder == 0)
+    return in;
+  else
+    return in + roundTo - remainder;
 }
 
-Status DBImpl::Put(const WriteOptions& options,
-                     const Slice& key,
-                     const Slice& value) {
+Status DBImpl::Put(const WriteOptions &options, const Slice &key,
+                   const Slice &value) {
 
   // insert to in-memory cache
   std::string skey(key.data(), key.size());
-  Cache::Handle* h = insert_cache(skey, value);
+  Cache::Handle *h = insert_cache(skey, value);
   release_cache(h);
 
   uint64_t logOffset;
@@ -94,13 +97,14 @@ Status DBImpl::Put(const WriteOptions& options,
     logOffset = lseek(logFD_, (size_t)0, SEEK_END);
     wret = write(logFD_, value.data(), value.size());
   }
-  // printf("offset: %d, size: %d, write: %d, errno: %d\n", logOffset, wSize, wret, errno);
-  
+  // printf("offset: %d, size: %d, write: %d, errno: %d\n", logOffset, wSize,
+  // wret, errno);
+
   assert(logOffset >= 0);
   char metaVal[12];
   uint32_t valSize = value.size();
   memcpy(metaVal, &logOffset, sizeof(logOffset));
-  memcpy(metaVal+8, &valSize, sizeof(valSize)); // not pretty!
+  memcpy(metaVal + 8, &valSize, sizeof(valSize)); // not pretty!
   rocksdb::Slice rocks_key(key.data(), key.size());
   rocksdb::Slice rocks_val(metaVal, 12);
   rocksdb::Status s = rdb_->Put(rocksdb::WriteOptions(), rocks_key, rocks_val);
@@ -109,34 +113,33 @@ Status DBImpl::Put(const WriteOptions& options,
   return Status();
 }
 
-Status DBImpl::Delete(const WriteOptions& options, const Slice& key) {
+Status DBImpl::Delete(const WriteOptions &options, const Slice &key) {
   // not supported yet
-  
+
   return Status();
 }
 
+Status DBImpl::Get(const ReadOptions &options, const Slice &key,
+                   std::string *value) {
 
-Status DBImpl::Get(const ReadOptions& options,
-                     const Slice& key,
-                     std::string* value) {
-  
   // read in-memory cache
   std::string skey(key.data(), key.size());
   Cache::Handle *h = read_cache(skey, value);
   if (h != NULL) { // hit in cache
-      release_cache(h);
-      return Status();
+    release_cache(h);
+    return Status();
   }
 
   // read from device
   rocksdb::Slice rocks_key(key.data(), key.size());
   std::string rocks_val;
   rocksdb::Status s = rdb_->Get(rocksdb::ReadOptions(), rocks_key, &rocks_val);
-  if (s.IsNotFound()) return Status().NotFound(Slice());
-  
+  if (s.IsNotFound())
+    return Status().NotFound(Slice());
+
   assert(s.ok() && rocks_val.size() == 12);
   char *p = &rocks_val[0];
-  uint64_t logOffset= *((uint64_t *)p);
+  uint64_t logOffset = *((uint64_t *)p);
   p = p + 8;
   uint32_t valSize = *((uint32_t *)p);
   value->resize(valSize);
@@ -150,12 +153,11 @@ Status DBImpl::Get(const ReadOptions& options,
   return Status();
 }
 
-Iterator* DBImpl::NewIterator(const ReadOptions& options) {
+Iterator *DBImpl::NewIterator(const ReadOptions &options) {
   return NewDBIterator(this, options);
 }
 
-Status DB::Open(const Options& options, const std::string& dbname,
-                DB** dbptr) {
+Status DB::Open(const Options &options, const std::string &dbname, DB **dbptr) {
 
   *dbptr = NULL;
 
@@ -164,5 +166,4 @@ Status DB::Open(const Options& options, const std::string& dbname,
   return Status(Status::OK());
 }
 
-}  // namespace wisckey
-
+} // namespace wisckey
