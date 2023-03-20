@@ -50,8 +50,7 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     exit(-1);
   }
   rocksdb::Options valuedbOptions = options.valuedbOptions;
-  // valuedbOptions.compaction_filter_factory.reset(new
-  // NewDbCompactionFilterFactory(keydb_));
+  // valuedbOptions.compaction_filter_factory.reset(new NewDbCompactionFilterFactory(keydb_));
   valuedbOptions.comparator = rocksdb::Uint64Comparator();
 
   status = rocksdb::DB::Open(valuedbOptions, dbname + "valuedb", &valuedb_);
@@ -125,13 +124,7 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
 
   rocksdb::WriteOptions write_options;
   rocksdb::Status s = keydb_->Put(write_options, lkey, pkey);
-  // int wi_retry_cnt = 0;
-  // while (!s.ok()) {
-  //   fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-  //   s = keydb_->Put(write_options, lkey, pkey);
-  //   if (wi_retry_cnt++ >= 3)
-  //     return Status().IOError(Slice());
-  // }
+  assert(s.ok());
 
   // prepare physical value
   int pval_size = sizeof(uint8_t) + key.size() + value.size();
@@ -146,14 +139,6 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   // write pkey-pval in db
   rocksdb::Slice pval(pval_str, pval_size);
   s = valuedb_->Put(write_options, pkey, pval);
-
-  // wi_retry_cnt = 0;
-  // while (!s.ok()) {
-  //   fprintf(stderr, "[rocks index put] err: %s\n", s.ToString().c_str());
-  //   s = valuedb_->Put(write_options, pkey, pval);
-  //   if (wi_retry_cnt++ >= 3)
-  //     return Status().IOError(Slice());
-  // }
   assert(s.ok());
 
   free(pkey_str);
@@ -187,14 +172,6 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
     return Status().NotFound(Slice());
   }
 
-  // int ri_retry_cnt = 0;
-  // while (!(s.ok())) { // read index retry, rare
-  //   usleep(100);
-  //   s = keydb_->Get(rocksdb::ReadOptions(), lkey, &pkey_str);
-  //   if (ri_retry_cnt++ >= 3)
-  //     return Status().NotFound(Slice());
-  // }
-
   // read from valuedb
   rocksdb::Slice pkey(pkey_str.data(), pkey_str.size());
   std::string pval_str;
@@ -204,14 +181,6 @@ Status DBImpl::Get(const ReadOptions &options, const Slice &key,
     RecordTick(options_.statistics.get(), REQ_GET_NOEXIST);
     return Status().NotFound(Slice());
   }
-
-  // ri_retry_cnt = 0;
-  // while (!(s.ok())) { // read index retry, rare
-  //   usleep(100);
-  //   s = valuedb_->Get(rocksdb::ReadOptions(), pkey, &pval_str);
-  //   if (ri_retry_cnt++ >= 3)
-  //     return Status().NotFound(Slice());
-  // }
 
   const char *ptr = pval_str.data();
   uint8_t key_len = *((uint8_t *)ptr);
