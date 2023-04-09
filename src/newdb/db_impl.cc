@@ -239,12 +239,16 @@ void DBImpl::vLogGCWorker(void *args) {
   valuedb_->GetProperty("rocksdb.stats", &stats);
   printf("stats: %s\n", stats.c_str());
   std::vector<uint64_t>::iterator gc_keys_start, gc_keys_end;
+  std::vector<uint64_t> SessionGCKeys;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
     std::sort(phy_keys_for_gc.begin(), phy_keys_for_gc.end());
-    gc_keys_start = phy_keys_for_gc.begin();
-    gc_keys_end = phy_keys_for_gc.end();
+    SessionGCKeys.insert(SessionGCKeys.begin(), phy_keys_for_gc.begin(),
+                         phy_keys_for_gc.end());
+    phy_keys_for_gc.clear();
   }
+  gc_keys_start = SessionGCKeys.begin();
+  gc_keys_end = SessionGCKeys.end();
   // #ifdef DEBUG
   printf("vLogGarbageCollect: GC Keys");
   for (auto it = gc_keys_start; it != gc_keys_end; ++it) {
@@ -358,18 +362,23 @@ void DBImpl::vLogGCWorker(void *args) {
   }
 
   // cleaning the gc_keys
-  for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it) {
+  for (auto it = SessionGCKeys.begin(); it != SessionGCKeys.end(); ++it) {
     printf("%ld ", *it);
   }
   printf("\n");
-  // deleting from the reverse order
+
   printf("size: %ld\n", deletion_keys.size());
   for (int i = deletion_keys.size() - 1; i >= 0; i--) {
-    phy_keys_for_gc.erase(deletion_keys[i].smallest_itr,
-                          deletion_keys[i].largest_itr);
+    SessionGCKeys.erase(deletion_keys[i].smallest_itr,
+                        deletion_keys[i].largest_itr);
+  }
+  // inserting the pending keys for next session
+  {
+    std::unique_lock<std::mutex> lock(gc_keys_mutex);
+    phy_keys_for_gc.insert(phy_keys_for_gc.end(), SessionGCKeys.begin(),
+                           SessionGCKeys.end());
   }
 
-  //
   for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it) {
     printf("%ld ", *it);
   }
