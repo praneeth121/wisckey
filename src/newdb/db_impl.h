@@ -72,6 +72,7 @@ public:
   Status Get(const ReadOptions &options, const Slice &key, std::string *value);
   Iterator *NewIterator(const ReadOptions &);
   void vLogGarbageCollect();
+  void vLogGCWorker(void* args);
 
 private:
   Options options_;
@@ -111,6 +112,22 @@ private:
   sem_t q_sem_;
   // I/O request conter (read only for now)
   std::atomic<int64_t> inflight_io_count_;
+};
+
+class GCMetadata {
+public:
+  rocksdb::SstFileMetaData sstmeta;
+  bool ready_for_gc;
+  int level;
+  std::vector<uint64_t>::iterator smallest_itr;
+  std::vector<uint64_t>::iterator largest_itr;
+};
+/** custom comparator **/
+
+ 
+struct GCCollectedKeys {
+  std::vector<uint64_t>::iterator smallest_itr;
+  std::vector<uint64_t>::iterator largest_itr; 
 };
 
 } // namespace newdb
