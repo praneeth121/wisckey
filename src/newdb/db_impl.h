@@ -129,6 +129,15 @@ struct GCCollectedKeys {
   std::vector<uint64_t>::iterator largest_itr;
 };
 
+static void StartGCThread(void *args) {
+  DB *db_ = (DB *)args;
+  while (1) {
+    fprintf(stdout, "starting the GC\n");
+    db_->vLogGarbageCollect();
+    fprintf(stdout, "Garbage collection done\n");
+    sleep(1);
+  }
+}
 } // namespace newdb
 
 #endif

@@ -63,6 +63,8 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     printf("rocksdb open error: %s\n", status_str.c_str());
     exit(-1);
   }
+  // start the garbage thread
+  threadpool_add(pool_, &StartGCThread, this, 0);
 }
 
 DBImpl::~DBImpl() {
