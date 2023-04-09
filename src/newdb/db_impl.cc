@@ -243,8 +243,7 @@ void DBImpl::vLogGCWorker(void *args) {
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
     std::sort(phy_keys_for_gc.begin(), phy_keys_for_gc.end());
-    SessionGCKeys.insert(SessionGCKeys.begin(), phy_keys_for_gc.begin(),
-                         phy_keys_for_gc.end());
+    SessionGCKeys.insert(SessionGCKeys.begin(), phy_keys_for_gc.begin(), phy_keys_for_gc.end());
     phy_keys_for_gc.clear();
   }
   gc_keys_start = SessionGCKeys.begin();
@@ -366,19 +365,18 @@ void DBImpl::vLogGCWorker(void *args) {
     printf("%ld ", *it);
   }
   printf("\n");
-
+  
   printf("size: %ld\n", deletion_keys.size());
-  for (int i = deletion_keys.size() - 1; i >= 0; i--) {
-    SessionGCKeys.erase(deletion_keys[i].smallest_itr,
-                        deletion_keys[i].largest_itr);
+  for(int i = deletion_keys.size()-1;i >= 0;i--) {
+    SessionGCKeys.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
   }
   // inserting the pending keys for next session
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
-    phy_keys_for_gc.insert(phy_keys_for_gc.end(), SessionGCKeys.begin(),
-                           SessionGCKeys.end());
+    phy_keys_for_gc.insert(phy_keys_for_gc.end(), SessionGCKeys.begin(), SessionGCKeys.end());
   }
-
+  SessionGCKeys.clear();
+  
   for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it) {
     printf("%ld ", *it);
   }
