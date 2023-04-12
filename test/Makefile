@@ -1,6 +1,6 @@
 
 
-CC=g++
+CC=g++ -fopenmp
 INCLUDES=-I../include
 LIBS=-L../libs -pthread -lwisckey -lrocksdb -lnewdb -std=c++11
 CXXFLAG=-O2 -fPIC -w -march=native
@@ -20,11 +20,15 @@ test_new:
 rocks_perf:
 	$(CC) rocks_perf.cc -o rocks_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 
+rocks_perf_omp:
+	$(CC) rocks_perf_omp.cc -o rocks_perf_omp $(INCLUDES) $(LIBS) $(CXXFLAG)
+
 newdb_perf:
 	$(CC) newdb_perf.cc -o newdb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 wisckey_perf:
 	$(CC) wisckeydb_perf.cc -o wisckeydb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
+
 db_bench: db_bench.cc
 	$(CC) db_bench.cc -o db_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
 

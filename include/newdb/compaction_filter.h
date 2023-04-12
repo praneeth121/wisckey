@@ -60,11 +60,6 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
   if(garbage_keys_ == NULL) {
     return rocksdb::CompactionFilter::Decision::kKeep;
   }
-  // printf("running filter on following keys\n");
-  // for(std::set<uint64_t>::iterator it = garbage_keys_->begin(); it != garbage_keys_->end();++it) {
-  //     printf("%ld ", *it);
-  // }  
-  // printf("\n");
   auto it = garbage_keys_->find(*(uint64_t*)key.data());
   if (it != garbage_keys_->end()) {
 // #ifdef DEBUG

@@ -78,10 +78,14 @@ private:
   Options options_;
   std::string dbname_;
   std::mutex gc_keys_mutex;
+  double AvgTimeForKeyDBInsertion;
+  double AvgTimeForValueDBInsertion;
+  double AvgTimeForValuePreperation;
   // rocksdb for key-offset
 public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
+
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;

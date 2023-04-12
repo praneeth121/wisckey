@@ -235,6 +235,7 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   release_buffer_entry(hash, bh);
   // write value to log, make sure lseek and write atomic
   {
+    auto ValueDBKeyInsertionStartTime = std::chrono::high_resolution_clock::now();
     std::unique_lock<std::mutex> lock(logM_[hash]);
     lba = lba_[hash] + log_buf_offset_[hash];
     memcpy(aligned_log_buf_[hash] + log_buf_offset_[hash], value.data(), wSize);
@@ -253,9 +254,12 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
       lba_[hash] += log_buf_offset_[hash];
       log_buf_offset_[hash] = 0;
     }
+    auto ValueDBKeyInsertionEndTime = std::chrono::high_resolution_clock::now();
+    AvgTimeForValueDBInsertion += std::chrono::duration<double>(ValueDBKeyInsertionEndTime-ValueDBKeyInsertionStartTime).count();
   }
 
   // write key-offset record
+  auto KeyDBStartTime = std::chrono::high_resolution_clock::now();
   assert(lba >= 0);
   char metaVal[12];
   uint32_t valSize = value.size();
@@ -265,6 +269,8 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   rocksdb::Slice rocks_val(metaVal, 12);
   rocksdb::WriteOptions write_options;
   rocksdb::Status s = rdb_->Put(write_options, rocks_key, rocks_val);
+  auto KeyDBEndTime = std::chrono::high_resolution_clock::now();
+  AvgTimeForKeyDBInsertion += std::chrono::duration<double>(KeyDBEndTime-KeyDBStartTime).count();
 
   int wi_retry_cnt = 0;
   while (!s.ok()) {
@@ -573,6 +579,12 @@ void DBImpl::vLogGarbageCollect() {
 };
 
 Iterator *DBImpl::NewIterator(const ReadOptions &options) {
+  // auto average_keydb_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(AvgTimeForKeyDBInsertion);
+  // auto average_valuedb_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(AvgTimeForValueDBInsertion);
+  std::cout << std::fixed << "Avg KeyDBInsertionTime: "
+              << AvgTimeForKeyDBInsertion << " ms\n";
+  std::cout << std::fixed << "Avg ValueDBInsertionTime: "
+              << AvgTimeForValueDBInsertion << " ms\n";
   return NewDBIterator(this, options);
 }
 

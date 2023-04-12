@@ -80,6 +80,9 @@ private:
   std::string dbname_;
   // rocksdb for key-offset
   rocksdb::DB *rdb_;
+  double AvgTimeForKeyDBInsertion;
+  double AvgTimeForValueDBInsertion;
+  std::chrono::high_resolution_clock::duration AvgTimeForValuePreperation;
 
   // write ahead log
   std::mutex walM_[LOG_PARTITION];

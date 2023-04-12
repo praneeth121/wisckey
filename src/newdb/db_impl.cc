@@ -63,8 +63,12 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
     printf("rocksdb open error: %s\n", status_str.c_str());
     exit(-1);
   }
+  // CODE FOR PROFILING
+  AvgTimeForKeyDBInsertion = 0;
+  AvgTimeForValueDBInsertion = 0;
+  AvgTimeForValuePreperation = 0;
   // start the garbage thread
-  threadpool_add(pool_, &StartGCThread, this, 0);
+  // threadpool_add(pool_, &StartGCThread, this, 0);
 }
 
 DBImpl::~DBImpl() {
@@ -87,8 +91,8 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
                    const Slice &value) {
 
   RecordTick(options_.statistics.get(), REQ_PUT);
-  // write phy-log key mapping in db
 
+  /* TODO: Uncomment the code to implement GC
   rocksdb::Slice gc_lkey(key.data(), key.size());
   std::string gc_pkey_str;
   rocksdb::Status gc_s =
@@ -102,23 +106,10 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
         phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
     }
   }
-  // int ri_retry_cnt = 0;
-  // while (!(gc_s.ok())) { // read index retry, rare
-  //   usleep(100);
-  //   gc_s = keydb_->Get(rocksdb::ReadOptions(), gc_lkey, &gc_pkey_str);
-  //   if (ri_retry_cnt++ >= 3)
-  //     break;
-  // }
+  */
 
-  if (gc_s.ok()) {
-    // TODO: Dynamic memory limitations
-    {
-      std::unique_lock<std::mutex> lock(gc_keys_mutex);
-      if (gc_pkey_str.size() != 0)
-        phy_keys_for_gc.push_back(*(uint64_t *)gc_pkey_str.data());
-    }
-  }
-
+  // keydb insertion
+  auto KeyDBStartTime = std::chrono::high_resolution_clock::now();
   rocksdb::Slice lkey(key.data(), key.size());
   uint64_t seq;
   seq = get_new_seq();
@@ -129,8 +120,11 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   rocksdb::WriteOptions write_options;
   rocksdb::Status s = keydb_->Put(write_options, lkey, pkey);
   assert(s.ok());
+  auto KeyDBEndTime = std::chrono::high_resolution_clock::now();
+  AvgTimeForKeyDBInsertion += std::chrono::duration<double>(KeyDBEndTime-KeyDBStartTime).count();
 
   // prepare physical value
+  auto ValueDBKeyPreperationStartTime = std::chrono::high_resolution_clock::now();
   int pval_size = sizeof(uint8_t) + key.size() + value.size();
   char *pval_str = (char *)malloc(pval_size);
   char *pval_ptr = pval_str;
@@ -139,11 +133,16 @@ Status DBImpl::Put(const WriteOptions &options, const Slice &key,
   memcpy(pval_ptr, key.data(), key.size());
   pval_ptr += key.size();
   memcpy(pval_ptr, value.data(), value.size());
+  auto ValueDBKeyPreperationEndTime = std::chrono::high_resolution_clock::now();
+  AvgTimeForValuePreperation = std::chrono::duration<double>(ValueDBKeyPreperationEndTime-ValueDBKeyPreperationStartTime).count();
 
   // write pkey-pval in db
+  auto ValueDBKeyInsertionStartTime = std::chrono::high_resolution_clock::now();
   rocksdb::Slice pval(pval_str, pval_size);
   s = valuedb_->Put(write_options, pkey, pval);
   assert(s.ok());
+  auto ValueDBKeyInsertionEndTime = std::chrono::high_resolution_clock::now();
+  AvgTimeForValueDBInsertion += std::chrono::duration<double>(ValueDBKeyInsertionEndTime-ValueDBKeyInsertionStartTime).count();
 
   free(pkey_str);
   free(pval_str);
@@ -201,6 +200,12 @@ void DBImpl::flushVLog() {
   printf("Block cache HIT: %ld\n",
          keydb_->GetOptions().statistics->getTickerCount(
              rocksdb::BLOCK_CACHE_DATA_HIT));
+  std::cout << std::fixed << "Avg KeyDBInsertionTime: "
+              << AvgTimeForKeyDBInsertion << " ms\n";
+    std::cout << std::fixed << "Avg ValuePreperation: "
+              << AvgTimeForValuePreperation << " ms\n";
+  std::cout << std::fixed << "Avg ValueDBInsertionTime: "
+              << AvgTimeForValueDBInsertion << " ms\n";
 }
 
 void DBImpl::vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
@@ -243,7 +248,8 @@ void DBImpl::vLogGCWorker(void *args) {
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
     std::sort(phy_keys_for_gc.begin(), phy_keys_for_gc.end());
-    SessionGCKeys.insert(SessionGCKeys.begin(), phy_keys_for_gc.begin(), phy_keys_for_gc.end());
+    SessionGCKeys.insert(SessionGCKeys.begin(), phy_keys_for_gc.begin(),
+                         phy_keys_for_gc.end());
     phy_keys_for_gc.clear();
   }
   gc_keys_start = SessionGCKeys.begin();
@@ -365,18 +371,20 @@ void DBImpl::vLogGCWorker(void *args) {
     printf("%ld ", *it);
   }
   printf("\n");
-  
+
   printf("size: %ld\n", deletion_keys.size());
-  for(int i = deletion_keys.size()-1;i >= 0;i--) {
-    SessionGCKeys.erase(deletion_keys[i].smallest_itr, deletion_keys[i].largest_itr);
+  for (int i = deletion_keys.size() - 1; i >= 0; i--) {
+    SessionGCKeys.erase(deletion_keys[i].smallest_itr,
+                        deletion_keys[i].largest_itr);
   }
   // inserting the pending keys for next session
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
-    phy_keys_for_gc.insert(phy_keys_for_gc.end(), SessionGCKeys.begin(), SessionGCKeys.end());
+    phy_keys_for_gc.insert(phy_keys_for_gc.end(), SessionGCKeys.begin(),
+                           SessionGCKeys.end());
   }
   SessionGCKeys.clear();
-  
+
   for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it) {
     printf("%ld ", *it);
   }
