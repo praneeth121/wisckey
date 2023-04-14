@@ -105,6 +105,12 @@ private:
   uint64_t get_curr_seq() { return sequence_; }
 
   void flushVLog();
+  void setSequenceNumber(uint64_t seq) {
+    {
+      std::unique_lock<std::mutex> lock(seq_mutex_);
+      sequence_ = seq;
+    }
+  };
   void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
                     std::vector<std::string> *vmeta_list, int idx, int size,
                     int *oldLogFD, int *newLogFD);

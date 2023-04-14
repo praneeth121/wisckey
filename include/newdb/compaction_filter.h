@@ -37,12 +37,12 @@ public:
   const char *Name() const override { return kClassName(); }
 
   void set_garbage_keys(std::set<uint64_t>* garbage_keys) {
-    printf("setting the garbage collection keys\n");
+    // printf("setting the garbage collection keys\n");
     garbage_keys_ = garbage_keys;
-    for(std::set<uint64_t>::iterator it = garbage_keys_->begin(); it != garbage_keys_->end();++it) {
-      printf("%ld ", *it);
-    }  
-    printf("\n");
+    // for(std::set<uint64_t>::iterator it = garbage_keys_->begin(); it != garbage_keys_->end();++it) {
+    //   printf("%ld ", *it);
+    // }  
+    // printf("\n");
   }
 
 private:
@@ -63,12 +63,12 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
   auto it = garbage_keys_->find(*(uint64_t*)key.data());
   if (it != garbage_keys_->end()) {
 // #ifdef DEBUG
-  printf("%ld is a garbage key\n", (*(uint64_t *)key.data()));
+  // printf("%ld is a garbage key\n", (*(uint64_t *)key.data()));
 // #endif
     return rocksdb::CompactionFilter::Decision::kRemove;
   }
 // #ifdef DEBUG
-  printf("%ld is not a garbage key\n", (*(uint64_t *)key.data()));
+  // printf("%ld is not a garbage key\n", (*(uint64_t *)key.data()));
 // #endif
   return rocksdb::CompactionFilter::Decision::kKeep;
 };

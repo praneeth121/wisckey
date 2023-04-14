@@ -20,9 +20,13 @@
 #include "rocksdb/status.h"
 #include "rocksdb/table.h"
 
+#include "newdb/slice.h"
+#include "newdb/db.h"
+
 #define MILLION 1000000
 #define STATS_POOL_INT 10
 #define ACCUM_GRANU 10
+#define NO_OF_IOS 1024 * 1024
 
 
 class Random {
@@ -162,159 +166,155 @@ void stats_thread(int total_ops, int pool_interval_milisec, int print_interval_m
   }
 }
 
-int main ( int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
   int stats_mode = 1;
-  int num_ios = 500 * 1000 * 128;
+  int num_ios = NO_OF_IOS/2; // Try half of the records updates
   int t = 8;
   int klen = 64;
   int vlen = 1024;
   int key_offset = 0;
-
-  rocksdb::Options rocksOptions;
-  rocksOptions.IncreaseParallelism();
-  // rocksOptions.OptimizeLevelStyleCompaction();
-  rocksOptions.create_if_missing = true;
-  rocksOptions.max_open_files = -1;
-  rocksOptions.compression = rocksdb::kNoCompression;
-  rocksOptions.paranoid_checks = false;
-  rocksOptions.allow_mmap_reads = false;
-  rocksOptions.allow_mmap_writes = false;
-  rocksOptions.use_direct_io_for_flush_and_compaction = true;
-  rocksOptions.use_direct_reads = true;
-  rocksOptions.write_buffer_size = 64 << 20;
-  rocksOptions.target_file_size_base = 64 * 1048576;
-  rocksOptions.max_bytes_for_level_base = 64 * 1048576;
-  rocksdb::DB *db = NULL;
-  rocksdb::DB::Open(rocksOptions, "./db_benchmark", &db);
+  long keys_written_count = 0;
 
 
+  newdb::Options options;
+  rocksdb::Options keydbOptions;
+  keydbOptions.IncreaseParallelism();
+  keydbOptions.create_if_missing = true;
+  keydbOptions.max_open_files = -1;
+  keydbOptions.compression = rocksdb::kNoCompression;
+  keydbOptions.paranoid_checks = false;
+  keydbOptions.allow_mmap_reads = false;
+  keydbOptions.allow_mmap_writes = false;
+  keydbOptions.use_direct_io_for_flush_and_compaction = true;
+  keydbOptions.use_direct_reads = true;
+  keydbOptions.write_buffer_size = 64 << 20;
+  keydbOptions.target_file_size_base = 64 * 1024 * 1024;
+  keydbOptions.max_bytes_for_level_base = 64 * 1024 * 1024;
+  // keydbOptions.allow_os_buffer = false;
+  options.keydbOptions = keydbOptions;
+  
+
+  rocksdb::Options valuedbOptions;
+  valuedbOptions.IncreaseParallelism();
+  valuedbOptions.create_if_missing = true;
+  valuedbOptions.max_open_files = -1;
+  valuedbOptions.compression = rocksdb::kNoCompression;
+  valuedbOptions.paranoid_checks = false;
+  // valuedbOptions.allow_mmap_reads = false;
+  // valuedbOptions.allow_mmap_writes = false;
+  valuedbOptions.use_direct_io_for_flush_and_compaction = true;
+  valuedbOptions.use_direct_reads = true;
+  valuedbOptions.write_buffer_size = 64 << 20;
+  valuedbOptions.target_file_size_base = 64 * 1048576;
+  valuedbOptions.max_bytes_for_level_base = 64 * 1048576;
+  // valuedbOptions.allow_os_buffer = false;
+  options.valuedbOptions = valuedbOptions;
+  
+
+  options.statistics = newdb::Options::CreateDBStatistics();
+
+  newdb::DB *db = NULL;
+  newdb::DB::Open(options, "./newdb_benchmark/", &db);
+
+  db->setSequenceNumber(num_ios + 100);
   // start of the thread
   struct timespec t1, t2;
   clock_gettime(CLOCK_REALTIME, &t1);
-  int total_ops = num_ios*t;
+  int total_ops = num_ios;
   // std::thread stat_thread(stats_thread, total_ops, STATS_POOL_INT, 1, 10, stats_mode);
 
   omp_set_num_threads(t);
+  long test_count = 0;
+  int new_key = num_ios + 1;
+  for(int aging = 0; aging < 3; aging++) {
+    printf("started aging process %d\n", aging);
+    srand(aging);
+    #pragma omp parallel for num_threads(t) shared(keys_written_count) shared(test_count) shared(new_key)
+    for(int i = 0;i < t;i++) {
+      #pragma omp atomic
+      test_count++;
+      int tid = omp_get_thread_num();
+      int nthreads = omp_get_num_threads();
+      printf("Thread %d started\n", tid);
+      newdb::WriteOptions wropts;
+      RandomGenerator gen;
+      char *key   = (char*)malloc(klen);
+      char *value = (char*)malloc(vlen);
+      int count = (total_ops)/nthreads;
+      int start_key = tid * count + key_offset;
+      for(int i = start_key; i < start_key + count; i++) {
+        int op = rand()%4;
+        char *key_str = (char*) malloc (sizeof(long)*2+1);
+        long hash_key = (op == 2)?fnvhash64(new_key):fnvhash64(i);
+        sprintf(key_str, "%0*lX", (int)sizeof(long)*2 , hash_key);
+        for (int jj=0; jj<klen; jj++) {
+          memcpy(key+jj, &key_str[jj%(sizeof(long)*2)], 1);
+        }
+        free(key_str);
+        char *rand_val = gen.Generate(vlen);
+        memcpy(value, rand_val, vlen);
 
- 
-  #pragma omp parallel for num_threads(t)
-  for(int i = 0;i < t;i++) {
-    int tid = omp_get_thread_num();
-    int nthreads = omp_get_num_threads();
-    printf("Thread %d started\n", tid);
-    rocksdb::WriteOptions wropts;
-    RandomGenerator gen;
-    char *key   = (char*)malloc(klen);
-    char *value = (char*)malloc(vlen);
-    int count = (num_ios * t)/nthreads;
-    int start_key = tid * count + key_offset;
-    for(int i = start_key; i < start_key + count; i++) {
-      char *key_str = (char*) malloc (sizeof(long)*2+1);
-      long hash_key = fnvhash64(i);
-      sprintf(key_str, "%0*lX", (int)sizeof(long)*2 , hash_key);
-      for (int jj=0; jj<klen; jj++) {
-        memcpy(key+jj, &key_str[jj%(sizeof(long)*2)], 1);
-      }
-      free(key_str);
-      char *rand_val = gen.Generate(vlen);
-      memcpy(value, rand_val, vlen);
-      // printf("Thread %d -> %d\n", tid, i);
-
-      rocksdb::Slice db_key(key, klen);
-      rocksdb::Slice db_val(value, vlen);
-      rocksdb::Status ret = db->Put(wropts, db_key, db_val);
-
-      // if( !ret.ok() ) {
-      //   fprintf(stderr, "store tuple %s (%d) failed with error: %s \n", std::string(key, klen).c_str(), i, ret.getState());
-      //   free(key);
-      //   free(value);
-      //   // return;
-      // } else {
-      //   // fprintf(stdout, "thread %d store key %s with value %s done \n", id, key, value);
-      // }
-      if (i%ACCUM_GRANU == (ACCUM_GRANU-1)) {
-        ops_keys.fetch_add(ACCUM_GRANU, std::memory_order_relaxed);
-      }
-    }
-    if(key) free(key);
-    if(value) free(value);
-  }
-
-  printf("Loaded the database with %d keys\n", num_ios*t);
-  // iterate database
-  // int new_key = num_ios * t + 1;
-  // for(int aging = 0; aging < 3; aging++) {
-  //   printf("started aging process %d\n", aging);
-  //   srand(aging);
-  //   #pragma omp parallel for num_threads(t)
-  //   for(int i = 0;i < t;i++) {
-  //     int tid = omp_get_thread_num();
-  //     int nthreads = omp_get_num_threads();
-  //     printf("Thread %d started\n", tid);
-  //     rocksdb::WriteOptions wropts;
-  //     RandomGenerator gen;
-  //     char *key   = (char*)malloc(klen);
-  //     char *value = (char*)malloc(vlen);
-  //     int count = (num_ios * t)/nthreads;
-  //     int start_key = tid * count + key_offset;
-  //     for(int i = start_key; i < start_key + count; i++) {
-  //       int op = rand()%3;
-  //       char *key_str = (char*) malloc (sizeof(long)*2+1);
-  //       long hash_key = (op == 2)?fnvhash64(new_key):fnvhash64(i);
-  //       new_key++;
-  //       sprintf(key_str, "%0*lX", (int)sizeof(long)*2 , hash_key);
-  //       for (int jj=0; jj<klen; jj++) {
-  //         memcpy(key+jj, &key_str[jj%(sizeof(long)*2)], 1);
-  //       }
-  //       free(key_str);
-  //       char *rand_val = gen.Generate(vlen);
-  //       memcpy(value, rand_val, vlen);
-
-  //       rocksdb::Slice db_key(key, klen);
-  //       rocksdb::Slice db_val(value, vlen);
+        newdb::Slice db_key(key, klen);
+        newdb::Slice db_val(value, vlen);
 
         
-  //       if(op == 0) {
-  //         // perform update
-  //         printf("performing update\n");
-  //         rocksdb::Status ret = db->Put(wropts, db_key, db_val);
-  //         if(!ret.ok()) {
-  //           printf("something wrong in update\n");
-  //         }
-  //       } else if (op == 1){
-  //         // perform delete
-  //         printf("performing deletion\n");
-  //         rocksdb::Status ret = db->Delete(wropts, db_key);
-  //         if(!ret.ok()) {
-  //           printf("something wrong in delete\n");
-  //         }
-  //       } else {
-  //         // perform insertion
-  //         printf("performing insertion\n");
-  //         rocksdb::Status ret = db->Put(wropts, db_key, db_val);
-  //         if(!ret.ok()) {
-  //           printf("something wrong in insert\n");
-  //         }
-  //       }
-  //     }
-  //     if(key) free(key);
-  //     if(value) free(value);
-  //   }
-  // }
-
+        if(op == 0) {
+          // perform update
+          // printf("performing update %d\n", i);
+          #pragma omp atomic
+          keys_written_count++;
+          newdb::Status ret = db->Put(wropts, db_key, db_val);
+          if(!ret.ok()) {
+            printf("something wrong in update\n");
+          }
+        } else if (op == 1){
+          // perform delete
+          // printf("performing deletion %d\n", i);
+          newdb::Status ret = db->Delete(wropts, db_key); 
+          #pragma omp atomic
+          keys_written_count++;
+          if(!ret.ok()) {
+            printf("something wrong in delete\n");
+          }
+        } else if (op == 2) {
+          // perform insertion
+          // printf("performing insertion %d\n", new_key);
+          #pragma omp atomic
+          keys_written_count++;
+          #pragma omp atomic
+          new_key++;
+          newdb::Status ret = db->Put(wropts, db_key, db_val);
+          if(!ret.ok()) {
+            printf("something wrong in insert\n");
+          }
+          ops_keys.fetch_add(ACCUM_GRANU, std::memory_order_relaxed);
+        }
+      } 
+      if(key) free(key);
+      if(value) free(value);
+    }
+    printf("done aging process: Running GC\n");
+    db->flushVLog();
+    db->vLogGarbageCollect();
+  }
+  std::cout << "loop count " << test_count << std::endl;
+  std::cout << "keys updated " << keys_written_count << std::endl;
   // avg throughtput
   clock_gettime(CLOCK_REALTIME, &t2);
   unsigned long long start, end;
   start = t1.tv_sec * 1000000000L + t1.tv_nsec;
   end = t2.tv_sec * 1000000000L + t2.tv_nsec;
   double sec = (double)(end - start) / 1000000000L;
-  fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_ios * t /sec );
+  fprintf(stdout, "Total time %.2f sec; Throughput %.2f ops/sec\n", sec, (double) num_ios/sec );
 
   // total keys operated on
   stats_end.store(true) ;
   sleep(1);
   //stat_thread.join();
   fprintf(stdout, "Total operation keys %lu\n", ops_keys.load());
+
+  newdb::ReadOptions rdopts;
+  db->NewIterator(rdopts);
 
   delete db;
   return 0;

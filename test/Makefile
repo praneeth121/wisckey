@@ -20,8 +20,11 @@ test_new:
 rocks_perf:
 	$(CC) rocks_perf.cc -o rocks_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 
-rocks_perf_omp:
-	$(CC) rocks_perf_omp.cc -o rocks_perf_omp $(INCLUDES) $(LIBS) $(CXXFLAG)
+load_benchmark:
+	$(CC) LoadBenchMark.cpp -o load_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+
+aging_benchmark:
+	$(CC) AgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 newdb_perf:
 	$(CC) newdb_perf.cc -o newdb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)

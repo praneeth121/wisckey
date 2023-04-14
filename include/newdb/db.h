@@ -72,6 +72,7 @@ public:
 
   virtual void flushVLog() = 0;
   virtual void vLogGarbageCollect() = 0;
+  virtual void setSequenceNumber(uint64_t seq) = 0;
   // virtual rocksdb::DB* get_keydb() = 0;
   // virtual rocksdb::DB* get_valuedb() = 0;
 
