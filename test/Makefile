@@ -14,7 +14,7 @@ test_rocks:
 test_wisc:
 	$(CC) test_wisckey.cc -o test_wisc $(INCLUDES) $(LIBS) $(CXXFLAG)
 
-test_new:
+test_new_:
 	$(CC) test_new.cc -o test_new $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 rocks_perf:

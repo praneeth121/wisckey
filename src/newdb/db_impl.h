@@ -81,11 +81,11 @@ private:
   double AvgTimeForKeyDBInsertion;
   double AvgTimeForValueDBInsertion;
   double AvgTimeForValuePreperation;
+  double GCThreshold;
   // rocksdb for key-offset
 public:
   rocksdb::DB *keydb_;
   rocksdb::DB *valuedb_;
-
 
 private:
   std::shared_ptr<rocksdb::Statistics> dbstats_;
@@ -105,24 +105,24 @@ private:
   uint64_t get_curr_seq() { return sequence_; }
 
   void flushVLog();
-  void setSequenceNumber(uint64_t seq) {
-    {
-      std::unique_lock<std::mutex> lock(seq_mutex_);
-      sequence_ = seq;
-    }
-  };
-  void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
-                    std::vector<std::string> *vmeta_list, int idx, int size,
-                    int *oldLogFD, int *newLogFD);
-  // rocksdb::DB* get_keydb() { return keydb_;};
-  // rocksdb::DB* get_valuedb() { return valuedb_;};
+  void setSequenceNumber(uint64_t seq){
+      {std::unique_lock<std::mutex> lock(seq_mutex_);
+  sequence_ = seq;
+}
+}; // namespace newdb
+void vLogGCWorker(int hash, std::vector<std::string> *ukey_list,
+                  std::vector<std::string> *vmeta_list, int idx, int size,
+                  int *oldLogFD, int *newLogFD);
+// rocksdb::DB* get_keydb() { return keydb_;};
+// rocksdb::DB* get_valuedb() { return valuedb_;};
 
-  // thread pool
-  threadpool_t *pool_;
-  sem_t q_sem_;
-  // I/O request conter (read only for now)
-  std::atomic<int64_t> inflight_io_count_;
-};
+// thread pool
+threadpool_t *pool_;
+sem_t q_sem_;
+// I/O request conter (read only for now)
+std::atomic<int64_t> inflight_io_count_;
+}
+;
 
 class GCMetadata {
 public:

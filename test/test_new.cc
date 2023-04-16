@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 150000
+#define TOTAL_RECORDS 500000
+#define DEBUG 1
 
 int main() {
   newdb::DB *db_;
@@ -88,7 +89,7 @@ int main() {
   printf("finished update records through iterator\n");
   delete it;
 
-
+  db_->vLogGarbageCollect();
 
   // db_->flushVLog();
 
