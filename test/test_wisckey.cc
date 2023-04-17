@@ -58,6 +58,20 @@ int main() {
   printf("finished update records through iterator\n");
   delete it;
 
+
+  it = db_->NewIterator(options);
+  it->SeekToFirst();
+
+  newv = TOTAL_RECORDS;
+  while (it->Valid()) {
+    wisckey::Slice key = it->key();
+    wisckey::Slice val = it->value();
+    if(newv%2)
+      db_->Delete(wisckey::WriteOptions(), key);
+    newv++;
+    it->Next();
+  }
+  
   db_->flushVLog();
 
   // read back updated value

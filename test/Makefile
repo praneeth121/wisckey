@@ -3,7 +3,7 @@
 CC=g++ -fopenmp
 INCLUDES=-I../include
 LIBS=-L../libs -pthread -lwisckey -lrocksdb -lnewdb -std=c++11
-CXXFLAG=-O2 -fPIC -w -march=native
+CXXFLAG=-O2 -fPIC -w -march=native -g
 CXXFLAG_DBG=-O0 -fPIC -w -march=native -g 
 
 all: test_rocks test_wisc
@@ -11,7 +11,7 @@ all: test_rocks test_wisc
 test_rocks:
 	$(CC) test_rocks.cc -o test_rocks $(INCLUDES) $(LIBS) $(CXXFLAG)
 
-test_wisc:
+test_wisc_:
 	$(CC) test_wisckey.cc -o test_wisc $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 test_new_:
@@ -20,11 +20,17 @@ test_new_:
 rocks_perf:
 	$(CC) rocks_perf.cc -o rocks_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 
-load_benchmark:
-	$(CC) LoadBenchMark.cpp -o load_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+newdb_load_benchmark:
+	$(CC) NewDbLoadBenchMark.cpp -o load_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
 
-aging_benchmark:
-	$(CC) AgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+newdb_aging_benchmark:
+	$(CC) NewDbAgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+
+wisckeydb_load_benchmark:
+	$(CC) WisckeyDbLoadBenchMark.cpp -o load_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+
+wisckeydb_aging_benchmark:
+	$(CC) WisckeyDbAgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
 
 newdb_perf:
 	$(CC) newdb_perf.cc -o newdb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)

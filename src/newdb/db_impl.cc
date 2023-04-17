@@ -277,6 +277,7 @@ void DBImpl::vLogGCWorker(void *args) {
     phy_keys_for_gc.clear();
   }
   std::sort(GCKeysVector.begin(), GCKeysVector.end());
+  std::cout << "Total Keys before GC: " << GCKeysVector.size() << std::endl;
   gc_keys_start = GCKeysVector.begin();
   gc_keys_end = GCKeysVector.end();
 
@@ -351,9 +352,9 @@ void DBImpl::vLogGCWorker(void *args) {
       reinterpret_cast<NewDbCompactionFilterFactory *>(
           valuedb_->GetOptions().compaction_filter_factory.get());
   while (file_idx < input_files.size()) {
+    GCKeysSet.insert(input_files[file_idx].smallest_itr,
+                  input_files[file_idx].largest_itr);
     if (input_files[file_idx].ready_for_gc) {
-      GCKeysSet.insert(input_files[file_idx].smallest_itr,
-                       input_files[file_idx].largest_itr);
       compaction_files.push_back(input_files[file_idx].sstmeta.name);
       next_lvl = std::max(next_lvl, input_files[file_idx].level + 1);
     } else {
@@ -431,17 +432,12 @@ void DBImpl::vLogGCWorker(void *args) {
 #endif
   GCKeysVector.clear();
   // inserting the pending keys for next session
+  std::cout << "Total Keys After GC: " << GCKeysSet.size() << std::endl;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
     phy_keys_for_gc.insert(phy_keys_for_gc.end(), GCKeysSet.begin(),
                            GCKeysSet.end());
   }
-
-  // for (auto it = phy_keys_for_gc.begin(); it != phy_keys_for_gc.end(); ++it)
-  // {
-  //   printf("%ld ", *it);
-  // }
-  // printf("\n");
 
   valuedb_->GetProperty("rocksdb.stats", &stats);
   printf("stats: %s\n", stats.c_str());

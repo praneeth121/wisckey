@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "lru_cache.h"
 

@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string>
 #include <unordered_map>
+#include <iostream>
 
 #include "hash.h"
 #include "threadpool.h"
@@ -179,8 +180,9 @@ private:
   void erase_cache_entry(std::string &key) {
     if (cache_ == NULL)
       return;
+    std::cout << "entrying the cache erase block" << std::endl;
     bool evicted = cache_->Erase(key);
-
+    std::cout << "done cache erase block" << std::endl;
     if (evicted)
       RecordTick(options_.statistics.get(), CACHE_ERASE);
   };

@@ -11,7 +11,7 @@ CC=gcc
 MKDIR=mkdir
 INCLUDES=-I$(HOME)/include
 LIBS=-L$(HOME)/libs -Wl,-rpath,$(HOME)/libs -lrt -lpthread -ltbb -lrocksdb
-CXXFLAG=-fPIC -w -march=native -std=c++11 $(OPT)
+CXXFLAG=-fPIC -w -g -march=native -std=c++11 $(OPT)
 
 DB_SRCS=$(HOME)/src/db_impl.cc $(HOME)/src/db_iter.cc $(HOME)/src/hash.cc $(HOME)/src/cache/sharded_cache.cc  $(HOME)/src/cache/lru_cache.cc $(HOME)/src/cache/wlfu_cache.cc $(HOME)/src/cache/fifo_cache.cc $(HOME)/src/threadpool.c
 SRCS=$(DB_SRCS)

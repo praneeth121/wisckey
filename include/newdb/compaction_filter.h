@@ -65,6 +65,7 @@ NewDbCompactionFilter::FilterV2(int /*level*/, const rocksdb::Slice &key,
 // #ifdef DEBUG
   // printf("%ld is a garbage key\n", (*(uint64_t *)key.data()));
 // #endif
+    garbage_keys_->erase(it);
     return rocksdb::CompactionFilter::Decision::kRemove;
   }
 // #ifdef DEBUG
