@@ -6,19 +6,17 @@ cd test
 make newdb_load_benchmark
 make newdb_aging_benchmark
 
-iostat -d 1 nvme0n1 > ExperimentalResults/load_iostats.log &
-sleep 5
-pid=$!
+# iostat -d 1 nvme0n1 > ExperimentalResults/load_iostats.log &
+iostat -d nvme0n1 > ExperimentalResults/load_iostats.log
 ./load_bench > ExperimentalResults/load_log.txt
-sleep 60
-kill -9 "$pid"
+sleep 10
+iostat -d nvme0n1 >> ExperimentalResults/load_iostats.log
 
-iostat -d 1 nvme0n1 > ExperimentalResults/aging_iostats.log &
-sleep 5
-pid=$!
+iostat -d nvme0n1 > ExperimentalResults/aging_iostats.log &
 ./aging_bench > ExperimentalResults/aging_log.txt
-sleep 60
-kill -9 "$pid"
+sleep 10
+iostat -d nvme0n1 >> ExperimentalResults/aging_iostats.log &
+
 
 
 

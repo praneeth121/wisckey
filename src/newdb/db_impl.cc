@@ -69,8 +69,6 @@ DBImpl::DBImpl(const Options &options, const std::string &dbname)
   AvgTimeForKeyDBInsertion = 0;
   AvgTimeForValueDBInsertion = 0;
   AvgTimeForValuePreperation = 0;
-  // start the garbage thread
-  GCThreshold = 1.0;
   // threadpool_add(pool_, &StartGCThread, this, 0);
 }
 
@@ -252,6 +250,14 @@ Status DB::Open(const Options &options, const std::string &dbname, DB **dbptr) {
   return Status(Status::OK());
 }
 
+void log_gc_stats(std::vector<std::string> &files) {
+  std::cout << "running gc: ";
+  for (int i = 0; i < files.size(); i++) {
+    std::cout << files[i] << " ";
+  }
+  std::cout << std::endl;
+}
+
 bool cust_comparator_for_sstfiles(GCMetadata &a, GCMetadata &b) {
   if ((*((uint64_t *)a.sstmeta.smallestkey.data())) <
       (*((uint64_t *)b.sstmeta.smallestkey.data())))
@@ -320,7 +326,7 @@ void DBImpl::vLogGCWorker(void *args) {
       gc_mt_obj.largest_itr = large_itr;
       if (file.being_compacted)
         gc_mt_obj.ready_for_gc = false;
-      else if (garbage_percent >= this->GCThreshold)
+      else if (garbage_percent >= this->GARBAGE_THRESHOLD)
         gc_mt_obj.ready_for_gc = true;
       else
         gc_mt_obj.ready_for_gc = false;
@@ -341,35 +347,52 @@ void DBImpl::vLogGCWorker(void *args) {
   }
 
   std::set<uint64_t> GCKeysSet;
-
-  std::vector<GCCollectedKeys> deletion_keys;
-  int file_idx = 0;
-  std::vector<std::string> compaction_files;
-  std::vector<GCCollectedKeys> deletion_keys_tmp;
-  GCCollectedKeys gc_collected_keys_obj;
-  int next_lvl = 0;
   auto *compaction_filter_factory =
       reinterpret_cast<NewDbCompactionFilterFactory *>(
           valuedb_->GetOptions().compaction_filter_factory.get());
+
+  // temporary variables for compaction
+  int start_idx = 0, file_idx = 0;
+  std::vector<GCCollectedKeys> deletion_keys;
+  std::vector<GCMetadata> compaction_files_ready_for_gc;
+  std::vector<GCCollectedKeys> deletion_keys_tmp;
+  GCCollectedKeys gc_collected_keys_obj;
+
   while (file_idx < input_files.size()) {
+    // insert keys into set
     GCKeysSet.insert(input_files[file_idx].smallest_itr,
-                  input_files[file_idx].largest_itr);
+                     input_files[file_idx].largest_itr);
+
     if (input_files[file_idx].ready_for_gc) {
-      compaction_files.push_back(input_files[file_idx].sstmeta.name);
-      next_lvl = std::max(next_lvl, input_files[file_idx].level + 1);
+      // compaction files are ready for compaction
+      compaction_files_ready_for_gc.push_back(input_files[file_idx]);
     } else {
-      if (compaction_files.size() >= 1) {
-        printf("running a garbage collection on %d files\n",
-               compaction_files.size());
-        for (int i = 0; i < compaction_files.size(); i++) {
-          printf("%s ", compaction_files[i].data());
-        }
-        printf("\n");
-        // TODO: NO need of this
+
+      if (compaction_files_ready_for_gc.size() > 1) {
+        // NO NEED: update the garbage keys in filter
         compaction_filter_factory->set_garbage_keys(&GCKeysSet);
 
-        valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
-                               next_lvl);
+        // Final Compactions are divided into subcompactions instead of single long compaction (Avoid FileSize Skew)
+        std::vector<std::string> subcompaction_file_names;
+        int max_level_ = 0;
+        for (int l = 0; l < compaction_files_ready_for_gc.size(); l++) {
+          if (l != 0 && l % this->MAX_NUMBER_OF_FILES_FOR_COMPACTION == 0) {
+            log_gc_stats(subcompaction_file_names);
+            valuedb_->CompactFiles(rocksdb::CompactionOptions(),
+                                   subcompaction_file_names, max_level_ + 1);
+            // reset after every subcompaction
+            subcompaction_file_names.clear();
+            max_level_ = 0;
+          }
+          subcompaction_file_names.push_back(compaction_files_ready_for_gc[l].sstmeta.name);
+          max_level_ = std::max(max_level_, compaction_files_ready_for_gc[l].level);
+        }
+        // EDGE CASE: PENDING FILES FOR COMPACTION
+        if (subcompaction_file_names.size()) {
+          log_gc_stats(subcompaction_file_names);
+          valuedb_->CompactFiles(rocksdb::CompactionOptions(),
+                                 subcompaction_file_names, max_level_ + 1);
+        }
 #ifdef DEBUG
         rocksdb::ReadOptions rdopts;
         rocksdb::Iterator *it = valuedb_->NewIterator(rdopts);
@@ -384,27 +407,38 @@ void DBImpl::vLogGCWorker(void *args) {
         }
 #endif
       }
-      next_lvl = 0;
-      compaction_files.clear();
-      deletion_keys_tmp.clear();
+      compaction_files_ready_for_gc.clear();
     }
     file_idx++;
   }
 
-  // pending files
-  if (compaction_files.size() > 1) {
-    deletion_keys.insert(deletion_keys.end(), deletion_keys_tmp.begin(),
-                         deletion_keys_tmp.end());
-    printf("running a garbage collection on %d files\n",
-           compaction_files.size());
-    for (int i = 0; i < compaction_files.size(); i++) {
-      printf("%s ", compaction_files[i].data());
-    }
-    printf("\n");
+  // pending files - EDGE CASE
+  if (compaction_files_ready_for_gc.size() > 1) {
+    // update the garbage keys in filter
     compaction_filter_factory->set_garbage_keys(&GCKeysSet);
+    // total compactions are divided into subcompaction instead of single
+    // compaction
+    std::vector<std::string> subcompaction_file_names;
+    int max_level_ = 0;
+    for (int l = 0; l < compaction_files_ready_for_gc.size(); l++) {
+      if (l != 0 && l % this->MAX_NUMBER_OF_FILES_FOR_COMPACTION == 0) {
+        log_gc_stats(subcompaction_file_names);
 
-    valuedb_->CompactFiles(rocksdb::CompactionOptions(), compaction_files,
-                           next_lvl);
+        valuedb_->CompactFiles(rocksdb::CompactionOptions(),
+                               subcompaction_file_names, max_level_ + 1);
+        // reset after every subcompaction
+        subcompaction_file_names.clear();
+        max_level_ = 0;
+      }
+      subcompaction_file_names.push_back(compaction_files_ready_for_gc[l].sstmeta.name);
+      max_level_ = std::max(max_level_, compaction_files_ready_for_gc[l].level);
+    }
+    // EDGE CASE: PENDING FILES FOR COMPACTION
+    if (subcompaction_file_names.size()) {
+      log_gc_stats(subcompaction_file_names);
+      valuedb_->CompactFiles(rocksdb::CompactionOptions(),
+                             subcompaction_file_names, max_level_ + 1);
+    }
 #ifdef DEBUG
     rocksdb::ReadOptions rdopts;
     rocksdb::Iterator *it = valuedb_->NewIterator(rdopts);
@@ -419,9 +453,7 @@ void DBImpl::vLogGCWorker(void *args) {
     }
 #endif
   }
-  next_lvl = 0;
-  compaction_files.clear();
-  deletion_keys_tmp.clear();
+  compaction_files_ready_for_gc.clear();
 
 #ifdef DEBUG
   // cleaning the gc_keys
@@ -432,16 +464,29 @@ void DBImpl::vLogGCWorker(void *args) {
 #endif
   GCKeysVector.clear();
   // inserting the pending keys for next session
-  std::cout << "Total Keys After GC: " << GCKeysSet.size() << std::endl;
+  std::cout << "Pending Keys After GC: " << GCKeysSet.size() << std::endl;
   {
     std::unique_lock<std::mutex> lock(gc_keys_mutex);
     phy_keys_for_gc.insert(phy_keys_for_gc.end(), GCKeysSet.begin(),
                            GCKeysSet.end());
   }
 
+  rocksdb::ColumnFamilyMetaData cf_meta_2;
+  valuedb_->GetColumnFamilyMetaData(&cf_meta_2);
+
+  // std::vector<std::pair<rocksdb::SstFileMetaData, std::pair<int, bool>>>
+  // input_files;
+  std::cout << "sst files after Garbage Collection:\n";
+  input_files.clear();
+  for (auto level : cf_meta_2.levels) {
+    for (auto file : level.files) {
+      std::cout << file.name << std::endl;
+    }
+  }
+
   valuedb_->GetProperty("rocksdb.stats", &stats);
   printf("stats: %s\n", stats.c_str());
-};
+}; // namespace newdb
 
 void DBImpl::vLogGarbageCollect() {
   void *args;

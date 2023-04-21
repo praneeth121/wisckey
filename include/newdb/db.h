@@ -25,6 +25,8 @@ struct WriteOptions;
 // any external synchronization.
 class DB {
 public:
+  int MAX_NUMBER_OF_FILES_FOR_COMPACTION;
+  int GARBAGE_THRESHOLD;
   // Open the database with the specified "name".
   // Stores a pointer to a heap-allocated database in *dbptr and returns
   // OK on success.
