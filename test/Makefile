@@ -32,6 +32,12 @@ wisckeydb_load_benchmark:
 wisckeydb_aging_benchmark:
 	$(CC) WisckeyDbAgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
 
+rocksdb_load_benchmark:
+	$(CC) RocksDbLoadBenchMark.cpp -o load_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+
+rocksdb_aging_benchmark:
+	$(CC) RocksDbAgingBenchMark.cpp -o aging_bench $(INCLUDES) $(LIBS) $(CXXFLAG)
+
 newdb_perf:
 	$(CC) newdb_perf.cc -o newdb_perf $(INCLUDES) $(LIBS) $(CXXFLAG)
 

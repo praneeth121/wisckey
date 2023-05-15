@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TOTAL_RECORDS 1000
+#define TOTAL_RECORDS 10 * 1024 * 1024
 
 int main() {
   wisckey::DB *db_;
@@ -59,20 +59,20 @@ int main() {
   delete it;
 
 
-  it = db_->NewIterator(options);
-  it->SeekToFirst();
+  // it = db_->NewIterator(options);
+  // it->SeekToFirst();
 
-  newv = TOTAL_RECORDS;
-  while (it->Valid()) {
-    wisckey::Slice key = it->key();
-    wisckey::Slice val = it->value();
-    if(newv%2)
-      db_->Delete(wisckey::WriteOptions(), key);
-    newv++;
-    it->Next();
-  }
+  // newv = TOTAL_RECORDS;
+  // while (it->Valid()) {
+  //   wisckey::Slice key = it->key();
+  //   wisckey::Slice val = it->value();
+  //   if(newv%2)
+  //     db_->Delete(wisckey::WriteOptions(), key);
+  //   newv++;
+  //   it->Next();
+  // }
   
-  db_->flushVLog();
+  db_->vLogGarbageCollect();
 
   // read back updated value
   it = db_->NewIterator(options);

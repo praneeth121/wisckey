@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
   int kmode = 0;
   int start_record = 0;
   int packThres = 4096;
-
+e
   while ((c = getopt(argc, argv, "d:n:o:k:v:t:m:e:g:r:s:p:i:h")) != -1) {
     switch(c) {
     case 'd':

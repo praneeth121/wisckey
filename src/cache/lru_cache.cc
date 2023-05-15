@@ -187,6 +187,7 @@ void LRUCacheShard::Release(Cache::Handle* handle) {
 }
 
 bool LRUCacheShard::Erase(const Slice& key, uint32_t hash) {
+  std::cout << "started the erase process" << std::endl;
   LRUHandle* h;
   bool last_reference = false;
   {
@@ -207,6 +208,7 @@ bool LRUCacheShard::Erase(const Slice& key, uint32_t hash) {
 
   // Free the entry
   if (last_reference) h->Free();
+  std::cout << "done erasing process" << std::endl;
   return h!=NULL ;
 }
 
